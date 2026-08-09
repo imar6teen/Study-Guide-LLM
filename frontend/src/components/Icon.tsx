@@ -1,14 +1,20 @@
-import type { CSSProperties } from "react"
+import type { CSSProperties } from "react";
 
 interface IconProps {
-  name: string
-  size?: string
-  filled?: boolean
-  className?: string
-  style?: CSSProperties
+  name: string;
+  size?: string;
+  filled?: boolean;
+  className?: string;
+  style?: CSSProperties;
 }
 
-function Icon({ name, size, filled = false, className = "", style }: IconProps) {
+function Icon({
+  name,
+  size,
+  filled = false,
+  className = "",
+  style,
+}: IconProps) {
   return (
     <span
       aria-hidden
@@ -21,7 +27,7 @@ function Icon({ name, size, filled = false, className = "", style }: IconProps) 
     >
       {name}
     </span>
-  )
+  );
 }
 
-export default Icon
+export default Icon;

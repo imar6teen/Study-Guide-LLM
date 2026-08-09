@@ -1,7 +1,7 @@
-import { createBrowserRouter } from "react-router"
-import { Navigate } from "react-router"
-import { RouterProvider } from "react-router/dom"
-import { Signin, Signup, Chat } from "./pages"
+import { createBrowserRouter } from "react-router";
+import { Navigate } from "react-router";
+import { RouterProvider } from "react-router/dom";
+import { Signin, Signup, Chat } from "./pages";
 
 function App() {
   const router = createBrowserRouter([
@@ -21,9 +21,9 @@ function App() {
       path: "/app/signup",
       Component: Signup,
     },
-  ])
+  ]);
 
-  return <RouterProvider router={router} />
+  return <RouterProvider router={router} />;
 }
 
-export default App
+export default App;

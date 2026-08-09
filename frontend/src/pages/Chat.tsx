@@ -1,26 +1,26 @@
-import { useEffect, useRef, useState } from "react"
-import Icon from "../components/Icon"
+import { useEffect, useRef, useState } from "react";
+import Icon from "../components/Icon";
 
 interface GuideModule {
-  step: number
-  title: string
-  description: string
-  line: boolean
+  step: number;
+  title: string;
+  description: string;
+  line: boolean;
 }
 
 interface Guide {
-  tag: string
-  time: string
-  title: string
-  intro: string
-  modules: GuideModule[]
+  tag: string;
+  time: string;
+  title: string;
+  intro: string;
+  modules: GuideModule[];
 }
 
 interface Message {
-  id: number
-  role: "user" | "ai"
-  content?: string
-  guide?: Guide
+  id: number;
+  role: "user" | "ai";
+  content?: string;
+  guide?: Guide;
 }
 
 const INITIAL_MESSAGES: Message[] = [
@@ -43,7 +43,8 @@ const INITIAL_MESSAGES: Message[] = [
         {
           step: 1,
           title: "The Classical Crisis",
-          description: "Blackbody radiation, photoelectric effect, and the Bohr model.",
+          description:
+            "Blackbody radiation, photoelectric effect, and the Bohr model.",
           line: true,
         },
         {
@@ -55,19 +56,19 @@ const INITIAL_MESSAGES: Message[] = [
       ],
     },
   },
-]
+];
 
 const SUGGESTIONS = [
   { title: "Literature Review", subtitle: "Recent advances in CRISPR-Cas9" },
   { title: "Study Guide", subtitle: "Macroeconomics: Fiscal Policy" },
-]
+];
 
 const NAV_ITEMS = [
   { id: "new-chat", label: "New Chat", icon: "add_circle" },
   // { id: "recent-guides", label: "Recent Guides", icon: "history_edu" },
   // { id: "resources", label: "Resources", icon: "library_books" },
   { id: "settings", label: "Settings", icon: "settings" },
-]
+];
 
 function guideToText(guide: Guide): string {
   return [
@@ -77,7 +78,7 @@ function guideToText(guide: Guide): string {
     guide.intro,
     "",
     ...guide.modules.map((m) => `${m.step}. ${m.title} — ${m.description}`),
-  ].join("\n")
+  ].join("\n");
 }
 
 function demoReply(topic: string): string {
@@ -87,68 +88,77 @@ function demoReply(topic: string): string {
 2. Core concepts — break down the main principles.
 3. Applications — explore worked examples and practice problems.
 
-Would you like me to expand any section into a full study guide?`
+Would you like me to expand any section into a full study guide?`;
 }
 
 function Chat() {
-  const [activeNav, setActiveNav] = useState("new-chat")
-  const [guideMode, setGuideMode] = useState(true)
-  const [input, setInput] = useState("")
-  const [typing, setTyping] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [helpful, setHelpful] = useState(false)
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const nextId = useRef(3)
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [activeNav, setActiveNav] = useState("new-chat");
+  const [guideMode, setGuideMode] = useState(true);
+  const [input, setInput] = useState("");
+  const [typing, setTyping] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [helpful, setHelpful] = useState(false);
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const nextId = useRef(3);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
-  }, [messages, typing])
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages, typing]);
 
   function resizeTextarea() {
-    const el = textareaRef.current
-    if (!el) return
-    el.style.height = ""
-    el.style.height = `${el.scrollHeight}px`
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "";
+    el.style.height = `${el.scrollHeight}px`;
   }
 
   function resetTextarea() {
-    const el = textareaRef.current
-    if (el) el.style.height = ""
+    const el = textareaRef.current;
+    if (el) el.style.height = "";
   }
 
   function handleNav(id: string) {
-    setActiveNav(id)
-    setSidebarOpen(false)
+    setActiveNav(id);
+    setSidebarOpen(false);
     if (id === "new-chat") {
-      setMessages(INITIAL_MESSAGES)
-      setHelpful(false)
-      setCopied(false)
+      setMessages(INITIAL_MESSAGES);
+      setHelpful(false);
+      setCopied(false);
     }
   }
 
   function sendMessage(text: string) {
-    const trimmed = text.trim()
-    if (!trimmed || typing) return
-    setMessages((m) => [...m, { id: nextId.current++, role: "user", content: trimmed }])
-    setInput("")
-    resetTextarea()
-    setTyping(true)
+    const trimmed = text.trim();
+    if (!trimmed || typing) return;
+    setMessages((m) => [
+      ...m,
+      { id: nextId.current++, role: "user", content: trimmed },
+    ]);
+    setInput("");
+    resetTextarea();
+    setTyping(true);
     setTimeout(() => {
-      setMessages((m) => [...m, { id: nextId.current++, role: "ai", content: demoReply(trimmed) }])
-      setTyping(false)
-    }, 1200)
+      setMessages((m) => [
+        ...m,
+        { id: nextId.current++, role: "ai", content: demoReply(trimmed) },
+      ]);
+      setTyping(false);
+    }, 1200);
   }
 
   async function copyGuide(guide: Guide) {
     try {
-      await navigator.clipboard.writeText(guideToText(guide))
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+      await navigator.clipboard.writeText(guideToText(guide));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
     } catch {
-      setCopied(false)
+      setCopied(false);
     }
   }
 
@@ -168,13 +178,20 @@ function Chat() {
       >
         <div className="p-md flex items-center gap-base border-b border-on-primary/10">
           <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center">
-            <Icon name="school" size="18px" filled className="text-on-primary-container" />
+            <Icon
+              name="school"
+              size="18px"
+              filled
+              className="text-on-primary-container"
+            />
           </div>
-          <span className="font-headline-md text-on-primary tracking-tight">&nbsp;Study Guide</span>
+          <span className="font-headline-md text-on-primary tracking-tight">
+            &nbsp;Study Guide
+          </span>
         </div>
         <nav className="flex-1 px-sm py-md space-y-xs">
           {NAV_ITEMS.filter((item) => item.id !== "settings").map((item) => {
-            const active = activeNav === item.id
+            const active = activeNav === item.id;
             return (
               <button
                 key={item.id}
@@ -188,7 +205,7 @@ function Chat() {
                 <Icon name={item.icon} className="mr-sm" />
                 {item.label}
               </button>
-            )
+            );
           })}
           <div className="pt-md mt-md border-t border-on-primary/10">
             {NAV_ITEMS.filter((item) => item.id === "settings").map((item) => (
@@ -220,20 +237,32 @@ function Chat() {
             >
               <Icon name="menu" />
             </button>
-            <span className="text-label-md uppercase tracking-widest text-outline truncate">Academic Engine</span>
+            <span className="text-label-md uppercase tracking-widest text-outline truncate">
+              Academic Engine
+            </span>
           </div>
           <div className="flex items-center gap-2 md:gap-md shrink-0">
             <button className="flex items-center gap-xs text-secondary hover:text-on-secondary-container transition-colors">
               <Icon name="auto_awesome" />
-              <span className="font-label-md hidden md:inline">Smart Refine</span>
+              <span className="font-label-md hidden md:inline">
+                Smart Refine
+              </span>
             </button>
             <div className="flex items-center gap-sm border-l border-outline-variant pl-md">
               <div className="text-right hidden sm:block">
-                <div className="text-body-sm font-bold text-on-surface">Dr. Scholarly</div>
-                <div className="text-[10px] text-outline uppercase">Professor Account</div>
+                <div className="text-body-sm font-bold text-on-surface">
+                  Dr. Scholarly
+                </div>
+                <div className="text-[10px] text-outline uppercase">
+                  Professor Account
+                </div>
               </div>
               <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center border border-primary/10">
-                <Icon name="person" size="16px" className="text-on-primary-container" />
+                <Icon
+                  name="person"
+                  size="16px"
+                  className="text-on-primary-container"
+                />
               </div>
             </div>
           </div>
@@ -243,18 +272,26 @@ function Chat() {
           <div className="flex flex-col w-full h-[calc(100vh-64px)] supports-[height:100dvh]:h-[calc(100dvh-64px)] overflow-hidden">
             <div className="flex flex-1 overflow-hidden">
               <div className="flex-1 flex flex-col min-w-0 bg-surface">
-                <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-lg py-lg relative">
+                <div
+                  ref={scrollRef}
+                  className="flex-1 overflow-y-auto px-4 md:px-lg py-lg relative"
+                >
                   <div className="max-w-4xl mx-auto w-full space-y-lg">
                     <div className="flex justify-center mb-lg mt-md">
                       <div className="text-center max-w-2xl">
                         <div className="w-12 h-12 bg-primary-container rounded-xl mx-auto mb-sm flex items-center justify-center shadow-sm">
-                          <Icon name="menu_book" size="24px" className="text-on-primary-container" />
+                          <Icon
+                            name="menu_book"
+                            size="24px"
+                            className="text-on-primary-container"
+                          />
                         </div>
                         <h1 className="font-headline-lg text-headline-lg text-on-surface mb-xs">
                           Welcome to Academic Engine
                         </h1>
                         <p className="font-body-md text-body-md text-on-surface-variant max-w-full mx-auto">
-                          Ask a question, request a literature review, or generate a structured study guide.
+                          Ask a question, request a literature review, or
+                          generate a structured study guide.
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-sm mt-md max-w-full mx-auto">
                           {SUGGESTIONS.map((s) => (
@@ -262,13 +299,15 @@ function Chat() {
                               key={s.title}
                               className="bg-surface-container-low hover:bg-surface-container-high transition-colors text-left p-sm rounded-xl group relative overflow-hidden"
                               onClick={() => {
-                                setInput(`${s.title}: ${s.subtitle}`)
-                                textareaRef.current?.focus()
-                                setTimeout(resizeTextarea, 0)
+                                setInput(`${s.title}: ${s.subtitle}`);
+                                textareaRef.current?.focus();
+                                setTimeout(resizeTextarea, 0);
                               }}
                             >
                               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                              <div className="font-label-md text-label-md text-primary mb-xs">{s.title}</div>
+                              <div className="font-label-md text-label-md text-primary mb-xs">
+                                {s.title}
+                              </div>
                               <div className="font-body-sm text-body-sm text-on-surface-variant truncate">
                                 {s.subtitle}
                               </div>
@@ -282,13 +321,19 @@ function Chat() {
                       msg.role === "user" ? (
                         <div key={msg.id} className="flex justify-end mb-md">
                           <div className="bg-primary text-on-primary rounded-2xl rounded-br-none px-md py-sm max-w-[85%] md:max-w-2xl shadow-sm relative">
-                            <div className="font-body-md text-body-md">{msg.content}</div>
+                            <div className="font-body-md text-body-md">
+                              {msg.content}
+                            </div>
                           </div>
                         </div>
                       ) : msg.guide ? (
                         <div key={msg.id} className="flex justify-start mb-md">
                           <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center mr-md mt-sm flex-shrink-0">
-                            <Icon name="account_balance" size="18px" className="text-primary" />
+                            <Icon
+                              name="account_balance"
+                              size="18px"
+                              className="text-primary"
+                            />
                           </div>
                           <div className="bg-surface-container-lowest border border-outline-variant/20 text-on-surface rounded-2xl rounded-bl-none px-md py-md max-w-3xl shadow-sm w-full relative">
                             <div className="absolute -left-[17px] top-[14px] w-0 h-0 border-t-[8px] border-t-transparent border-r-[16px] border-r-surface-container-lowest border-b-[8px] border-b-transparent z-10" />
@@ -296,15 +341,22 @@ function Chat() {
                               <span className="font-label-md text-label-md text-primary tracking-widest uppercase">
                                 {msg.guide.tag}
                               </span>
-                              <span className="ml-auto text-xs font-mono text-outline">{msg.guide.time}</span>
+                              <span className="ml-auto text-xs font-mono text-outline">
+                                {msg.guide.time}
+                              </span>
                             </div>
-                            <h2 className="font-headline-lg text-headline-lg text-on-surface mb-sm">{msg.guide.title}</h2>
+                            <h2 className="font-headline-lg text-headline-lg text-on-surface mb-sm">
+                              {msg.guide.title}
+                            </h2>
                             <p className="font-body-md text-body-md text-on-surface-variant mb-lg leading-relaxed">
                               {msg.guide.intro}
                             </p>
                             <div className="space-y-sm mt-lg">
                               {msg.guide.modules.map((module) => (
-                                <div key={module.step} className="flex items-start gap-md">
+                                <div
+                                  key={module.step}
+                                  className="flex items-start gap-md"
+                                >
                                   <div className="w-8 flex flex-col items-center">
                                     <div
                                       className={`w-8 h-8 rounded-full font-bold flex items-center justify-center font-label-md text-label-md ${
@@ -333,18 +385,29 @@ function Chat() {
                             <div className="flex gap-sm mt-lg pt-sm border-t border-outline-variant/20">
                               <button
                                 className={`text-xs font-label-md text-label-md transition-colors flex items-center gap-xs ${
-                                  helpful ? "text-primary" : "text-on-surface-variant hover:text-primary"
+                                  helpful
+                                    ? "text-primary"
+                                    : "text-on-surface-variant hover:text-primary"
                                 }`}
                                 onClick={() => setHelpful((v) => !v)}
                               >
-                                <Icon name="thumb_up" size="16px" filled={helpful} />
+                                <Icon
+                                  name="thumb_up"
+                                  size="16px"
+                                  filled={helpful}
+                                />
                                 {helpful ? "Helpful" : "Helpful"}
                               </button>
                               <button
                                 className="text-xs font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-xs"
-                                onClick={() => msg.guide && copyGuide(msg.guide)}
+                                onClick={() =>
+                                  msg.guide && copyGuide(msg.guide)
+                                }
                               >
-                                <Icon name={copied ? "check" : "content_copy"} size="16px" />
+                                <Icon
+                                  name={copied ? "check" : "content_copy"}
+                                  size="16px"
+                                />
                                 {copied ? "Copied" : "Copy"}
                               </button>
                             </div>
@@ -353,11 +416,17 @@ function Chat() {
                       ) : (
                         <div key={msg.id} className="flex justify-start mb-md">
                           <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center mr-md mt-sm flex-shrink-0">
-                            <Icon name="account_balance" size="18px" className="text-primary" />
+                            <Icon
+                              name="account_balance"
+                              size="18px"
+                              className="text-primary"
+                            />
                           </div>
                           <div className="bg-surface-container-lowest border border-outline-variant/20 text-on-surface rounded-2xl rounded-bl-none px-md py-md max-w-[85%] md:max-w-3xl shadow-sm relative">
                             <div className="absolute -left-[17px] top-[14px] w-0 h-0 border-t-[8px] border-t-transparent border-r-[16px] border-r-surface-container-lowest border-b-[8px] border-b-transparent z-10" />
-                            <div className="font-body-md text-body-md whitespace-pre-line">{msg.content}</div>
+                            <div className="font-body-md text-body-md whitespace-pre-line">
+                              {msg.content}
+                            </div>
                           </div>
                         </div>
                       ),
@@ -366,12 +435,22 @@ function Chat() {
                     {typing && (
                       <div className="flex justify-start mb-md">
                         <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center mr-md mt-sm flex-shrink-0">
-                          <Icon name="account_balance" size="18px" className="text-primary" />
+                          <Icon
+                            name="account_balance"
+                            size="18px"
+                            className="text-primary"
+                          />
                         </div>
                         <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl rounded-bl-none px-md py-sm flex items-center gap-xs shadow-sm">
                           <div className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" />
-                          <div className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <div className="w-2 h-2 rounded-full bg-primary/80 animate-bounce" style={{ animationDelay: "300ms" }} />
+                          <div
+                            className="w-2 h-2 rounded-full bg-primary/60 animate-bounce"
+                            style={{ animationDelay: "150ms" }}
+                          />
+                          <div
+                            className="w-2 h-2 rounded-full bg-primary/80 animate-bounce"
+                            style={{ animationDelay: "300ms" }}
+                          />
                         </div>
                       </div>
                     )}
@@ -421,13 +500,13 @@ function Chat() {
                           rows={1}
                           value={input}
                           onChange={(e) => {
-                            setInput(e.target.value)
-                            resizeTextarea()
+                            setInput(e.target.value);
+                            resizeTextarea();
                           }}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault()
-                              sendMessage(input)
+                              e.preventDefault();
+                              sendMessage(input);
                             }
                           }}
                         />
@@ -443,7 +522,8 @@ function Chat() {
                     </div>
                     <div className="text-center mt-sm">
                       <span className="font-body-sm text-body-sm text-outline-variant text-[11px]">
-                        Academic Engine can make mistakes. Verify critical information.
+                        Academic Engine can make mistakes. Verify critical
+                        information.
                       </span>
                     </div>
                   </div>
@@ -454,7 +534,7 @@ function Chat() {
         </main>
       </div>
     </div>
-  )
+  );
 }
 
-export default Chat
+export default Chat;
