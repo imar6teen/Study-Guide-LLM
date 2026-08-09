@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>AI Study Chat - Study Guide LLM</title>
+<style>
+@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="tailwind-config">
+tailwind.config={theme:{extend:{colors:{"primary-fixed-dim":"#bdc2ff","error-container":"#ffdad6","on-surface":"#191c1e","on-tertiary-fixed-variant":"#3a485b","on-tertiary":"#ffffff","primary-fixed":"#e0e0ff","surface-container-highest":"#e0e3e5","secondary":"#795900","surface-tint":"#4c56af","surface-container-low":"#f2f4f6","on-surface-variant":"#454652","on-primary":"#ffffff","secondary-container":"#fec330","error":"#ba1a1a","surface-bright":"#f7f9fb","on-tertiary-container":"#8b99af","tertiary-container":"#233143","surface-container":"#eceef0","background":"#f7f9fb","outline":"#767683","on-secondary":"#ffffff","surface-container-high":"#e6e8ea","on-background":"#191c1e","primary-container":"#1a237e","on-secondary-fixed":"#261a00","on-error-container":"#93000a","tertiary-fixed-dim":"#b9c7df","secondary-fixed-dim":"#f8bd2a","surface-container-lowest":"#ffffff","surface":"#f7f9fb","on-primary-container":"#8690ee","on-primary-fixed-variant":"#343d96","inverse-primary":"#bdc2ff","tertiary-fixed":"#d5e3fc","on-error":"#ffffff","on-tertiary-fixed":"#0d1c2e","inverse-surface":"#2d3133","surface-dim":"#d8dadc","on-primary-fixed":"#000767","surface-variant":"#e0e3e5","on-secondary-container":"#6f5100","secondary-fixed":"#ffdfa0","tertiary":"#0d1c2e","primary":"#000666","outline-variant":"#c6c5d4","inverse-on-surface":"#eff1f3","on-secondary-fixed-variant":"#5c4300"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{md:"24px",base:"8px",gutter:"24px",lg:"48px",xs:"4px","margin-mobile":"16px",sm:"12px",xl:"80px","margin-desktop":"64px"},fontFamily:{"headline-lg-mobile":["Playfair Display"],"label-md":["Inter"],"headline-xl":["Playfair Display"],"headline-md":["Playfair Display"],"body-lg":["Inter"],code:["Inter"],"body-md":["Inter"],"body-sm":["Inter"],"headline-lg":["Playfair Display"]},fontSize:{"headline-lg-mobile":["28px",{lineHeight:"36px",fontWeight:"600"}],"label-md":["14px",{lineHeight:"16px",letterSpacing:"0.05em",fontWeight:"600"}],"headline-xl":["48px",{lineHeight:"60px",fontWeight:"700"}],"headline-md":["24px",{lineHeight:"32px",fontWeight:"600"}],"body-lg":["18px",{lineHeight:"28px",fontWeight:"400"}],code:["14px",{lineHeight:"20px",fontWeight:"400"}],"body-md":["16px",{lineHeight:"24px",fontWeight:"400"}],"body-sm":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-lg":["32px",{lineHeight:"40px",fontWeight:"600"}]}}}}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Playfair+Display:wght@100..900&display=swap" rel="stylesheet">
+</head>
+<body class="bg-surface font-body-md text-on-surface">
+
+<!-- Sidebar -->
+<aside class="fixed left-0 top-0 h-full w-72 bg-primary z-50 flex flex-col shadow-xl">
+<div class="p-md flex items-center gap-base border-b border-on-primary/10">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container text-[18px]" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<span class="font-headline-md text-on-primary tracking-tight">&nbsp;Study Guide</span>
+</div>
+<nav class="flex-1 px-sm py-md space-y-xs" data-active-classes="bg-secondary-container text-on-secondary-container font-bold">
+<a aria-current="page" class="flex items-center px-md py-sm rounded-xl transition-all bg-secondary-container text-on-secondary-container font-bold" data-path="new-chat" href="#">
+<span class="material-symbols-outlined mr-sm">add_circle</span>New Chat
+</a>
+<a class="flex items-center px-md py-sm rounded-xl text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary transition-all" data-path="recent-guides" href="#">
+<span class="material-symbols-outlined mr-sm">history_edu</span>Recent Guides
+</a>
+<a class="flex items-center px-md py-sm rounded-xl text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary transition-all" data-path="resources" href="#">
+<span class="material-symbols-outlined mr-sm">library_books</span>Resources
+</a>
+<div class="pt-md mt-md border-t border-on-primary/10">
+<a class="flex items-center px-md py-sm rounded-xl text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary transition-all" data-path="settings" href="#">
+<span class="material-symbols-outlined mr-sm">settings</span>Settings
+</a>
+</div>
+</nav>
+</aside>
+
+<div class="pl-72">
+<!-- Header -->
+<header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-md">
+<div class="flex items-center gap-sm">
+<span class="text-label-md uppercase tracking-widest text-outline">Academic Engine</span>
+</div>
+<div class="flex items-center gap-md">
+<button class="flex items-center gap-xs text-secondary hover:text-on-secondary-container transition-colors">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span class="font-label-md">Smart Refine</span>
+</button>
+<div class="flex items-center gap-sm border-l border-outline-variant pl-md">
+<div class="text-right hidden sm:block">
+<div class="text-body-sm font-bold text-on-surface">Dr. Scholarly</div>
+<div class="text-[10px] text-outline uppercase">Professor Account</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center border border-primary/10">
+<span class="material-symbols-outlined text-on-primary-container text-[16px]">person</span>
+</div>
+</div>
+</div>
+</header>
+
+<!-- Main Content -->
+<main class="relative pt-16 min-h-screen bg-surface">
+<div class="flex flex-col w-full h-[calc(100vh-64px)] overflow-hidden">
+<div class="flex flex-1 overflow-hidden">
+<!-- Chat Area -->
+<div class="flex-1 flex flex-col min-w-0 bg-surface">
+<!-- Chat Messages Scroll Area -->
+<div class="flex-1 overflow-y-auto px-lg py-lg relative" id="chat-messages">
+<div class="max-w-4xl mx-auto w-full space-y-lg">
+<!-- Welcome Message -->
+<div class="flex justify-center mb-xl mt-lg">
+<div class="text-center max-w-2xl">
+<div class="w-16 h-16 bg-primary-container rounded-2xl mx-auto mb-md flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined text-on-primary-container text-[32px]">menu_book</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface mb-sm">Welcome to Academic Engine</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg mx-auto">
+                     Your intelligent companion for rigorous academic exploration. Ask a question, request a literature review, or generate a structured study guide.
+                 </p>
+<div class="grid grid-cols-2 gap-sm mt-lg max-w-xl mx-auto">
+<button class="bg-surface-container-low hover:bg-surface-container-high transition-colors text-left p-md rounded-xl group relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="font-label-md text-label-md text-primary mb-xs">Literature Review</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant truncate">Recent advances in CRISPR-Cas9</div>
+</button>
+<button class="bg-surface-container-low hover:bg-surface-container-high transition-colors text-left p-md rounded-xl group relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="font-label-md text-label-md text-primary mb-xs">Study Guide</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant truncate">Macroeconomics: Fiscal Policy</div>
+</button>
+</div>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex justify-end mb-md">
+<div class="bg-primary text-on-primary rounded-2xl rounded-br-none px-md py-sm max-w-2xl shadow-sm relative">
+<div class="font-body-md text-body-md">Create a structured study guide for Introduction to Quantum Mechanics, focusing on the historical context and foundational principles.</div>
+</div>
+</div>
+<!-- AI Message (Study Guide Generation) -->
+<div class="flex justify-start mb-md">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center mr-md mt-sm flex-shrink-0">
+<span class="material-symbols-outlined text-primary text-[18px]">account_balance</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/20 text-on-surface rounded-2xl rounded-bl-none px-md py-md max-w-3xl shadow-sm w-full relative">
+<div class="absolute -left-[17px] top-[14px] w-0 h-0 border-t-[8px] border-t-transparent border-r-[16px] border-r-surface-container-lowest border-b-[8px] border-b-transparent z-10"></div>
+<div class="flex items-center gap-sm mb-md pb-sm border-b border-outline-variant/20">
+<span class="font-label-md text-label-md text-primary tracking-widest uppercase">Study Guide Generated</span>
+<span class="ml-auto text-xs font-mono text-outline">0.4s</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-sm">Introduction to Quantum Mechanics</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-lg leading-relaxed">
+                 This guide structures your learning journey through the foundational concepts of Quantum Mechanics. It begins with the crisis in classical physics and progresses through the key postulates and mathematical formalism.
+             </p>
+<div class="space-y-sm mt-lg">
+<!-- Module 1 -->
+<div class="flex items-start gap-md">
+<div class="w-8 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container font-bold flex items-center justify-center font-label-md text-label-md">1</div>
+<div class="w-0.5 h-full bg-outline-variant/30 my-xs min-h-[40px]"></div>
+</div>
+<div class="flex-1 pb-md">
+<h4 class="font-headline-md text-headline-md text-on-surface mb-xs">The Classical Crisis</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Blackbody radiation, photoelectric effect, and the Bohr model.</p>
+</div>
+</div>
+<!-- Module 2 -->
+<div class="flex items-start gap-md">
+<div class="w-8 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant font-bold flex items-center justify-center font-label-md text-label-md">2</div>
+</div>
+<div class="flex-1">
+<h4 class="font-headline-md text-headline-md text-on-surface mb-xs">Wave-Particle Duality</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">De Broglie hypothesis and the double-slit experiment.</p>
+</div>
+</div>
+</div>
+<div class="flex gap-sm mt-lg pt-sm border-t border-outline-variant/20">
+<button class="text-xs font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">thumb_up</span> Helpful
+                </button>
+<button class="text-xs font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">content_copy</span> Copy
+                </button>
+</div>
+</div>
+</div>
+<!-- Typing indicator (hidden by default) -->
+<div class="hidden flex justify-start mb-md" id="typing-indicator">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center justify-center mr-md mt-sm flex-shrink-0">
+<span class="material-symbols-outlined text-primary text-[18px]">account_balance</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl rounded-bl-none px-md py-sm flex items-center gap-xs shadow-sm">
+<div class="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style="animation-delay: 0ms"></div>
+<div class="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style="animation-delay: 150ms"></div>
+<div class="w-2 h-2 rounded-full bg-primary/80 animate-bounce" style="animation-delay: 300ms"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="p-md bg-surface border-t border-outline-variant/20 z-10">
+<div class="max-w-4xl mx-auto">
+<div class="bg-surface-container-lowest rounded-2xl p-sm shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-outline-variant/30 flex flex-col transition-all focus-within:shadow-[0_8px_32px_rgba(0,0,0,0.1)] focus-within:border-primary/50">
+<div class="flex items-center justify-between mb-sm px-sm pt-xs">
+<label class="flex items-center gap-sm cursor-pointer group">
+<div class="relative">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-10 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant group-hover:text-primary transition-colors">Generate Study Guide Format</span>
+</label>
+<div class="flex gap-sm">
+<button class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-outline transition-colors" title="Attach file">
+<span class="material-symbols-outlined text-[20px]">attach_file</span>
+</button>
+<button class="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-outline transition-colors" title="Web search">
+<span class="material-symbols-outlined text-[20px]">travel_explore</span>
+</button>
+</div>
+</div>
+<div class="flex items-end gap-sm">
+<textarea class="flex-1 bg-transparent border-none focus:ring-0 resize-none font-body-md text-body-md text-on-surface placeholder:text-outline-variant min-h-[44px] max-h-[200px] p-sm" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" placeholder="Ask a question or request a topic breakdown..." rows="1"></textarea>
+<button class="w-11 h-11 mb-xs rounded-xl bg-primary text-on-primary flex items-center justify-center hover:bg-primary/90 hover:shadow-md transition-all active:scale-95 flex-shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+<div class="text-center mt-sm">
+<span class="font-body-sm text-body-sm text-outline-variant text-[11px]">Academic Engine can make mistakes. Verify critical information.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body>
+</html>
