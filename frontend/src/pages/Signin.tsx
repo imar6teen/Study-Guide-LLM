@@ -25,27 +25,6 @@ function Signin() {
     <div className="bg-surface-container-low font-body-md text-on-surface flex min-h-screen">
       {/* Left decorative panel — hidden on mobile */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary relative items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-10">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern
-                height="48"
-                id="grid-signin"
-                patternUnits="userSpaceOnUse"
-                width="48"
-              >
-                <path
-                  className="text-on-primary"
-                  d="M 48 0 L 0 0 0 48"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="0.5"
-                />
-              </pattern>
-            </defs>
-            <rect fill="url(#grid-signin)" height="100%" width="100%" />
-          </svg>
-        </div>
         <div className="relative z-10 text-center px-md max-w-full">
           <div className="w-20 h-20 rounded-2xl bg-primary-container flex items-center justify-center mx-auto mb-md shadow-lg">
             <Icon
@@ -58,7 +37,7 @@ function Signin() {
           <h2 className="font-headline-md text-headline-md text-on-primary mb-sm">
             Study Guide LLM
           </h2>
-          <p className="font-body-md text-body-md text-primary-fixed-dim leading-relaxed">
+          <p className="font-body-md text-body-md text-on-primary leading-relaxed">
             Your intelligent companion for rigorous academic exploration.
           </p>
         </div>

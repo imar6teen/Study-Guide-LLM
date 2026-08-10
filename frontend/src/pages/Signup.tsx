@@ -25,31 +25,6 @@ function Signup() {
     <div className="bg-surface-container-low font-body-md text-on-surface flex min-h-screen">
       {/* Left decorative panel — hidden on mobile */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary relative items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <svg height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern
-                height="40"
-                id="grid-signup"
-                patternUnits="userSpaceOnUse"
-                width="40"
-              >
-                <path
-                  d="M 40 0 L 0 0 0 40"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                />
-              </pattern>
-            </defs>
-            <rect
-              className="text-on-primary"
-              fill="url(#grid-signup)"
-              height="100%"
-              width="100%"
-            />
-          </svg>
-        </div>
         <div className="relative z-10 text-center px-md max-w-full">
           <div className="w-20 h-20 rounded-2xl bg-primary-container flex items-center justify-center mx-auto mb-md shadow-lg">
             <Icon
@@ -62,7 +37,7 @@ function Signup() {
           <h2 className="font-headline-md text-headline-md text-on-primary mb-sm">
             Study Guide LLM
           </h2>
-          <p className="font-body-md text-body-md text-primary-fixed-dim leading-relaxed">
+          <p className="font-body-md text-body-md text-on-primary leading-relaxed">
             Master any subject with AI-powered study guides, interactive
             mindmaps, and scholarly citations.
           </p>

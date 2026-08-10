@@ -172,20 +172,20 @@ function Chat() {
         />
       )}
       <aside
-        className={`fixed left-0 top-0 h-full w-72 bg-primary z-50 flex flex-col shadow-xl transition-transform duration-300 ${
+        className={`fixed left-0 top-0 h-full w-72 bg-surface-container-high z-50 flex flex-col shadow-xl transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
         <div className="p-md flex items-center gap-base border-b border-on-primary/10">
-          <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-on-background flex items-center justify-center">
             <Icon
               name="school"
               size="18px"
               filled
-              className="text-on-primary-container"
+              className="text-on-secondary-fixed-variant"
             />
           </div>
-          <span className="font-headline-md text-on-primary tracking-tight">
+          <span className="font-headline-md text-on-background tracking-tight">
             &nbsp;Study Guide
           </span>
         </div>
@@ -198,7 +198,7 @@ function Chat() {
                 className={`flex items-center w-full px-md py-sm rounded-xl transition-all ${
                   active
                     ? "bg-secondary-container text-on-secondary-container font-bold"
-                    : "text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary"
+                    : "text-on-background hover:bg-on-primary/30 hover:font-bold"
                 }`}
                 onClick={() => handleNav(item.id)}
               >
@@ -214,7 +214,7 @@ function Chat() {
                 className={`flex items-center w-full px-md py-sm rounded-xl transition-all ${
                   activeNav === item.id
                     ? "bg-secondary-container text-on-secondary-container font-bold"
-                    : "text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary"
+                    : "text-on-background hover:bg-on-primary/30 hover:font-bold"
                 }`}
                 onClick={() => handleNav(item.id)}
               >
