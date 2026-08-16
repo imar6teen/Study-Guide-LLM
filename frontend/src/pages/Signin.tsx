@@ -1,25 +1,34 @@
-import { useState } from "react";
-import type { FormEvent } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useForm } from "react-hook-form";
+import type { SubmitHandler } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { loginSchema } from "../types";
 import Icon from "../components/Icon";
-import { Link } from "react-router";
+import SignInForm from "../components/SignInForm";
 
 function Signin() {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!email.includes("@") || !password) {
-      setError("Enter a valid institutional email and password.");
-      return;
-    }
-    setError("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  });
+
+  const onSubmit: SubmitHandler<z.infer<typeof loginSchema>> = (
+    data: z.infer<typeof loginSchema>
+  ) => {
+    console.log(data);
     navigate("/app/chat");
-  }
+  };
 
   return (
     <div className="bg-surface-container-low font-body-md text-on-surface flex min-h-screen">
@@ -46,7 +55,7 @@ function Signin() {
       {/* Right form panel */}
       <main className="flex-1 flex items-center justify-center px-margin-mobile md:px-md py-lg">
         <div className="w-full max-w-full flex flex-col space-y-lg">
-          <div className="flex flex-col items-center text-center space-y-sm">
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-sm">
             <div className="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center mb-base shadow-sm lg:hidden">
               <Icon
                 name="school"
@@ -63,98 +72,21 @@ function Signin() {
             </p>
           </div>
 
-          <form
-            className="flex flex-col space-y-md w-full bg-surface-container-lowest rounded-xl p-md shadow-md"
-            onSubmit={handleSubmit}
-          >
-            <div className="flex flex-col space-y-xs relative group">
-              <label
-                className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider ml-xs"
-                htmlFor="email"
-              >
-                Email
-              </label>
-              <div className="relative">
-                <Icon
-                  name="mail"
-                  className="absolute left-sm top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors"
-                />
-                <input
-                  className="w-full bg-surface-container-low font-body-md text-body-md text-on-surface rounded-lg pl-10 pr-sm py-sm outline-none border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-200"
-                  id="email"
-                  placeholder="johndoe@email.xyz"
-                  required
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
+          <SignInForm
+            register={register}
+            handleSubmit={handleSubmit}
+            onSubmit={onSubmit}
+            errors={errors}
+            isSubmitting={isSubmitting}
+          />
 
-            <div className="flex flex-col space-y-xs relative group">
-              <div className="flex justify-between items-center ml-xs mr-xs">
-                <label
-                  className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-                  htmlFor="password"
-                >
-                  Password
-                </label>
-                <a
-                  className="font-body-sm text-body-sm text-primary hover:text-on-primary-fixed-variant transition-colors underline decoration-transparent hover:decoration-current underline-offset-4"
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  Forgot Password?
-                </a>
-              </div>
-              <div className="relative">
-                <Icon
-                  name="lock"
-                  className="absolute left-sm top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors"
-                />
-                <input
-                  className="w-full bg-surface-container-low font-body-md text-body-md text-on-surface rounded-lg pl-10 pr-sm py-sm outline-none border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-200"
-                  id="password"
-                  placeholder="••••••••"
-                  required
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <button
-                  className="absolute right-sm top-12/20 -translate-y-1/2 text-outline hover:text-on-surface transition-colors focus:outline-none"
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  <Icon name={showPassword ? "visibility" : "visibility_off"} />
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <p className="font-body-sm text-body-sm text-error">{error}</p>
-            )}
-
-            <button
-              className="w-full bg-primary text-on-primary font-label-md text-label-md uppercase tracking-widest py-sm rounded-lg hover:bg-on-primary-fixed-variant transition-all duration-300 shadow-sm hover:shadow-md active:scale-[0.98] mt-base flex items-center justify-center space-x-2"
-              type="submit"
+          <div className="text-center lg:text-left">
+            <Link
+              className="font-body-md text-body-md text-primary hover:text-on-primary-fixed-variant underline transition-colors"
+              to={"/app/signup"}
             >
-              <span>Authenticate</span>
-              <Icon name="arrow_forward" className="text-[18px]" />
-            </button>
-          </form>
-
-          <div className="flex justify-center items-center pt-sm">
-            <p className="font-body-md text-body-md text-on-surface-variant">
-              New to Study Guide LLM?{" "}
-              <Link
-                to={"/app/signup"}
-                className="text-primary font-medium hover:text-on-primary-fixed-variant transition-colors border-b border-primary/30 hover:border-primary pb-0.5"
-              >
-                Create an account
-              </Link>
-            </p>
+              Don't have an account? Sign Up
+            </Link>
           </div>
         </div>
       </main>

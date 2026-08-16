@@ -54,7 +54,7 @@ function CreateAccountForm({
       />
 
       <InputForm<z.infer<typeof signupSchema>>
-        iconName="person"
+        iconName="mail"
         registerName="email"
         labelName="Email"
         id="email"

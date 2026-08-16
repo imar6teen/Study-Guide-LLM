@@ -1,11 +1,11 @@
 import Icon from "./Icon";
-import type { UseFormRegister, FieldErrors, FieldPath } from "react-hook-form";
+import type { UseFormRegister, FieldErrors, FieldPath, FieldValues } from "react-hook-form";
 import { get } from "react-hook-form";
 import { useState } from "react";
 
 import { capitalizeEachWord } from "../utils/string";
 
-type InputFormProps<T> = {
+type InputFormProps<T extends FieldValues> = {
   iconName: string;
   registerName: FieldPath<T>;
   labelName: string;
@@ -16,7 +16,7 @@ type InputFormProps<T> = {
   errors: FieldErrors<T>;
 };
 
-function InputForm<T>({
+function InputForm<T extends FieldValues>({
   iconName,
   registerName,
   labelName,
