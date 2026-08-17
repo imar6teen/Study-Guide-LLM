@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "../components/Icon";
+import useGetMe from "../hooks/useGetMe";
+import useAuthStore from "../hooks/useAuthStore";
+import { useNavigate } from "react-router";
+import ROUTES from "../constants/routes";
 
 interface GuideModule {
   step: number;
@@ -103,6 +107,19 @@ function Chat() {
   const nextId = useRef(3);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const authStore = useAuthStore();
+  const navigate = useNavigate();
+
+  useGetMe();
+
+  useEffect(() => {
+    if (!authStore.isAuthenticated) {
+      navigate(ROUTES.SIGNIN);
+    } else {
+      (() => setLoading(false))();
+    }
+  }, [authStore.isAuthenticated, navigate]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
@@ -160,6 +177,14 @@ function Chat() {
     } catch {
       setCopied(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="w-10 h-10 animate-spin rounded-full border-2 border-surface-variant border-t-transparent" />
+      </div>
+    );
   }
 
   return (
@@ -429,7 +454,7 @@ function Chat() {
                             </div>
                           </div>
                         </div>
-                      ),
+                      )
                     )}
 
                     {typing && (
