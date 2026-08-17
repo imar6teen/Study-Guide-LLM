@@ -1,5 +1,5 @@
-import type { SignupData, LoginData } from "./authentication";
+import type { SignupData, LoginData, Error } from "./authentication";
 import { signupSchema, loginSchema } from "./schema";
 
-export type { SignupData, LoginData };
+export type { SignupData, LoginData, Error };
 export { signupSchema, loginSchema };

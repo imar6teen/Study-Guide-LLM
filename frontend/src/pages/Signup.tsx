@@ -7,9 +7,26 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema } from "../types";
 import Icon from "../components/Icon";
 import CreateAccountForm from "../components/CreateAccountForm";
+import useAuthStore from "../hooks/useAuthStore";
+import { useEffect, useState } from "react";
+import ROUTES from "../constants/routes";
+import useGetMe from "../hooks/useGetMe";
 
 function Signup() {
   const navigate = useNavigate();
+  const authStore = useAuthStore();
+  const [loading, setLoading] = useState(true);
+
+  useGetMe();
+
+  useEffect(() => {
+    if (authStore.isAuthenticated) {
+      navigate(ROUTES.CHAT);
+      return;
+    }
+
+    (() => setLoading(false))();
+  }, [authStore.isAuthenticated, navigate]);
 
   const {
     register,
@@ -29,8 +46,16 @@ function Signup() {
     data: z.infer<typeof signupSchema>
   ) => {
     console.log(data);
-    navigate("/app/chat");
+    navigate(ROUTES.CHAT);
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="w-10 h-10 animate-spin rounded-full border-2 border-surface-variant border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-surface-container-low font-body-md text-on-surface flex min-h-screen">

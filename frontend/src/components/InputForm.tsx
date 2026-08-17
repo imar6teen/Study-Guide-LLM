@@ -1,5 +1,10 @@
 import Icon from "./Icon";
-import type { UseFormRegister, FieldErrors, FieldPath, FieldValues } from "react-hook-form";
+import type {
+  UseFormRegister,
+  FieldErrors,
+  FieldPath,
+  FieldValues,
+} from "react-hook-form";
 import { get } from "react-hook-form";
 import { useState } from "react";
 
@@ -56,7 +61,7 @@ function InputForm<T extends FieldValues>({
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-sm top-1/2 -translate-y-1/2"
+            className="absolute right-sm top-1/2 -translate-y-15/40"
           >
             <Icon name={showPassword ? "visibility_off" : "visibility"} />
           </button>
