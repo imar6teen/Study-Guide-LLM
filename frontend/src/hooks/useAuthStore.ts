@@ -16,7 +16,7 @@ type Action = {
   setIsAuthenticated: (value: boolean) => void;
 };
 
-const useAuthStore = create<State & Action>((set) => ({
+const useAuthStore = create<State & Action>()((set) => ({
   user: {
     username: "",
     name: "",

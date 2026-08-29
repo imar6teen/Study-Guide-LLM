@@ -3,10 +3,12 @@ import useAuthStore from "./useAuthStore";
 import getMe from "../helpers/me";
 
 function useGetMe() {
-  const authStore = useAuthStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const setUser = useAuthStore((state) => state.setUser);
+  const setIsAuthenticated = useAuthStore((state) => state.setIsAuthenticated);
 
   useEffect(() => {
-    if (authStore.isAuthenticated) {
+    if (isAuthenticated) {
       return;
     }
 
@@ -14,16 +16,16 @@ function useGetMe() {
       try {
         const data = await getMe();
         if (data === null) return;
-        authStore.setUser(data);
-        authStore.setIsAuthenticated(true);
+        setUser(data);
+        setIsAuthenticated(true);
       } catch (err) {
         console.log(err);
-        authStore.setUser({
+        setUser({
           name: "",
           email: "",
           username: "",
         });
-        authStore.setIsAuthenticated(false);
+        setIsAuthenticated(false);
       }
     };
 

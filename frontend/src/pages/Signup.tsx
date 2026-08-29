@@ -14,19 +14,20 @@ import useGetMe from "../hooks/useGetMe";
 
 function Signup() {
   const navigate = useNavigate();
-  const authStore = useAuthStore();
   const [loading, setLoading] = useState(true);
+
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   useGetMe();
 
   useEffect(() => {
-    if (authStore.isAuthenticated) {
+    if (isAuthenticated) {
       navigate(ROUTES.CHAT);
       return;
     }
 
     (() => setLoading(false))();
-  }, [authStore.isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate]);
 
   const {
     register,
