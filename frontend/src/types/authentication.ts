@@ -5,6 +5,19 @@ export interface SignupData {
   password: string;
 }
 
+type SignupField = "name" | "email" | "username" | "password";
+
+export interface SignupMessage {
+  message: string[];
+  field?: SignupField[];
+}
+
+export interface SignupReturn {
+  status: number;
+  statusMessage: string;
+  message: SignupMessage;
+}
+
 export interface LoginData {
   username: string;
   password: string;

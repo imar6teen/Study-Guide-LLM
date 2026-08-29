@@ -11,10 +11,13 @@ import useAuthStore from "../hooks/useAuthStore";
 import { useEffect, useState } from "react";
 import ROUTES from "../constants/routes";
 import useGetMe from "../hooks/useGetMe";
+import signup from "../helpers/signup";
 
 function Signup() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<number | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
@@ -32,6 +35,7 @@ function Signup() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
@@ -43,11 +47,32 @@ function Signup() {
     },
   });
 
-  const onSubmit: SubmitHandler<z.infer<typeof signupSchema>> = (
+  const onSubmit: SubmitHandler<z.infer<typeof signupSchema>> = async (
     data: z.infer<typeof signupSchema>
   ) => {
-    console.log(data);
-    navigate(ROUTES.CHAT);
+    setMessage(null);
+    setStatus(null);
+
+    const result = await signup(data);
+    setStatus(result.status);
+
+    if (result.status !== 200) {
+      const fields = result.message?.field;
+      const messages = result.message?.message;
+
+      if (fields && fields.length > 0) {
+        fields.forEach((field, index) => {
+          setError(field, {
+            type: "manual",
+            message: messages?.[index] ?? "Invalid value",
+          });
+        });
+      } else if (messages && messages.length > 0) {
+        setMessage(messages[0]);
+      }
+    } else {
+      setMessage(result.message.message[0]);
+    }
   };
 
   if (loading) {
@@ -100,6 +125,38 @@ function Signup() {
               Personalized learning paths and interactive visualizations.
             </p>
           </div>
+
+          {status === 200 && (
+            <div className="flex items-start gap-sm p-md rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 shadow-lg shadow-emerald-950/20 backdrop-blur-sm transition-all duration-300 animate-in fade-in slide-in-from-top-2">
+              <div className="p-xs rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0 flex items-center justify-center">
+                <Icon name="mark_email_read" size="24px" filled />
+              </div>
+              <div className="flex-1 space-y-xs">
+                <h4 className="font-label-md text-label-md text-emerald-300 font-semibold tracking-wide uppercase">
+                  Verify Your Email
+                </h4>
+                <p className="font-body-sm text-body-sm text-emerald-200/90 leading-relaxed">
+                  {message}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {status !== null && status !== 200 && message && (
+            <div className="flex items-start gap-sm p-md rounded-xl bg-error-container/30 border border-error/30 text-on-error-container shadow-lg shadow-black/20 backdrop-blur-sm transition-all duration-300 animate-in fade-in slide-in-from-top-2">
+              <div className="p-xs rounded-lg bg-error/20 text-error shrink-0 flex items-center justify-center">
+                <Icon name="error" size="24px" filled />
+              </div>
+              <div className="flex-1 space-y-xs">
+                <h4 className="font-label-md text-label-md text-error font-semibold tracking-wide uppercase">
+                  Registration Failed
+                </h4>
+                <p className="font-body-sm text-body-sm text-on-error-container/90 leading-relaxed">
+                  {message}
+                </p>
+              </div>
+            </div>
+          )}
 
           <CreateAccountForm
             register={register}

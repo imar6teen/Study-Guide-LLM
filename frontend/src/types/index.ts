@@ -1,5 +1,10 @@
-import type { SignupData, LoginData, Error } from "./authentication";
+import type {
+  SignupData,
+  SignupReturn,
+  LoginData,
+  Error,
+} from "./authentication";
 import { signupSchema, loginSchema } from "./schema";
 
-export type { SignupData, LoginData, Error };
+export type { SignupData, SignupReturn, LoginData, Error };
 export { signupSchema, loginSchema };
