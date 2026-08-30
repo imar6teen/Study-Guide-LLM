@@ -108,18 +108,22 @@ function Chat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const authStore = useAuthStore();
+  // const authStore = useAuthStore();
   const navigate = useNavigate();
+
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoaded = useAuthStore((state) => state.isLoaded);
 
   useGetMe();
 
   useEffect(() => {
-    if (!authStore.isAuthenticated) {
+    if (isLoaded && !isAuthenticated) {
       navigate(ROUTES.SIGNIN);
-    } else {
+    }
+    if (isLoaded && isAuthenticated) {
       (() => setLoading(false))();
     }
-  }, [authStore.isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, isLoaded]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({

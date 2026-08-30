@@ -4,8 +4,10 @@ import getMe from "../helpers/me";
 
 function useGetMe() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  // const isLoaded = useAuthStore((state) => state.isLoaded);
   const setUser = useAuthStore((state) => state.setUser);
   const setIsAuthenticated = useAuthStore((state) => state.setIsAuthenticated);
+  const setIsLoaded = useAuthStore((state) => state.setIsLoaded);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -26,6 +28,8 @@ function useGetMe() {
           username: "",
         });
         setIsAuthenticated(false);
+      } finally {
+        setIsLoaded(true);
       }
     };
 

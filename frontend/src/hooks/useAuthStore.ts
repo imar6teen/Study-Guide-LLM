@@ -9,11 +9,13 @@ type User = {
 type State = {
   user: User;
   isAuthenticated: boolean;
+  isLoaded: boolean;
 };
 
 type Action = {
   setUser: (user: User) => void;
   setIsAuthenticated: (value: boolean) => void;
+  setIsLoaded: (value: boolean) => void;
 };
 
 const useAuthStore = create<State & Action>()((set) => ({
@@ -22,10 +24,12 @@ const useAuthStore = create<State & Action>()((set) => ({
     name: "",
     email: "",
   },
+  isLoaded: false,
   isAuthenticated: false,
   setUser: (user: User) => set(() => ({ user: user })),
   setIsAuthenticated: (value: boolean) =>
     set(() => ({ isAuthenticated: value })),
+  setIsLoaded: (value: boolean) => set(() => ({ isLoaded: value })),
 }));
 
 export default useAuthStore;

@@ -20,17 +20,20 @@ function Signup() {
   const [message, setMessage] = useState<string | null>(null);
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoaded = useAuthStore((state) => state.isLoaded);
 
   useGetMe();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isLoaded && isAuthenticated) {
       navigate(ROUTES.CHAT);
       return;
     }
 
-    (() => setLoading(false))();
-  }, [isAuthenticated, navigate]);
+    if (isLoaded && !isAuthenticated) {
+      (() => setLoading(false))();
+    }
+  }, [isAuthenticated, navigate, isLoaded]);
 
   const {
     register,

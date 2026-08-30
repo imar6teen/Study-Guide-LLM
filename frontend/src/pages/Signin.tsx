@@ -22,18 +22,21 @@ function Signin() {
   const [status, setStatus] = useState<number | null>(null);
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoaded = useAuthStore((state) => state.isLoaded);
   const isVerified = searchParams.has("verified");
 
   useGetMe();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isLoaded && isAuthenticated) {
       navigate(ROUTES.CHAT);
       return;
     }
 
-    (() => setLoading(false))();
-  }, [isAuthenticated, navigate]);
+    if (isLoaded && !isAuthenticated) {
+      (() => setLoading(false))();
+    }
+  }, [isAuthenticated, navigate, isLoaded]);
 
   const {
     register,
