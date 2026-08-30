@@ -50,6 +50,9 @@ class Users(SQLModel, table = True):
     updated_at : datetime = Field(
         default = datetime.now(),
         nullable = False,
+        sa_column_kwargs={
+            "onupdate": lambda : datetime.now()
+        }
     )
 
     chatrooms : list["ChatRooms"] = Relationship(
@@ -87,6 +90,9 @@ class ChatRooms(SQLModel, table = True):
     updated_at : datetime = Field(
         default = datetime.now(),
         nullable = False,
+        sa_column_kwargs={
+            "onupdate": lambda : datetime.now()
+        }
     )
 
     deleted_at : datetime = Field(
@@ -138,6 +144,9 @@ class Chats(SQLModel, table = True):
     updated_at : datetime = Field(
         default = datetime.now(),
         nullable = False,
+        sa_column_kwargs={
+            "onupdate": lambda : datetime.now()
+        }
     )
 
     chat_room : ChatRooms = Relationship(
