@@ -1,8 +1,6 @@
 from study_guide_llm.app.db import verify_user
 from fastapi import APIRouter, Query, Form, Depends, Request, Response, BackgroundTasks
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel, Field
-from enum import Enum
 from typing import Annotated
 from sqlmodel import Session, select
 import bcrypt
@@ -22,30 +20,36 @@ router = APIRouter(
 sessionDep = Annotated[Session, Depends(get_session)]
 
 @router.post("/login")
-def login(session: sessionDep, data : Login, response : Response):
-    
+def login(session: sessionDep, data : Login, request : Request, response : Response):
     user : Users | None = session.exec(select(Users).where(Users.username == data.username)).first()
-    
+
+    print(user.password.encode('utf-8'))
+    # TODO make the error schema same with fastapi when validation error (or vice versa)
     if not user:
         response.status_code = 404
-        return {"message": "User not found"}
-
-    if user.password != data.password:
-        response.status_code = 401
-        return {"message": "Invalid password"}
-    
+        return {"message": ["User not found"], "field": ["username"]}
     if not user.email_verified:
         response.status_code = 403
-        return {"message": "Email not verified"}
+        return {"message": ["Email not verified"]}
+    is_password_validate = bcrypt.checkpw(data.password.encode("utf-8"), user.password.encode('utf-8'))
+    if not is_password_validate:
+        response.status_code = 401
+        return {"message": ["Invalid password"], "field": ["password"]}
+
+    request.session["user"] = {
+        "id" : str(user.users_id),
+        "username" : user.username,
+        "email" : user.email,
+        "name" : user.name
+    }
     
-    return {"message": "Login successful"}
+    return {"message": ["Login successful"]}
 
 @router.post("/signup")
 def signup(session: sessionDep, response : Response, data : Signup, bgt : BackgroundTasks):
     try:
         is_email_exist = is_user_exist(session, "email", data.email)
         is_username_exist = is_user_exist(session, "username", data.username)
-        print("checking existing done")
         
         # TODO make the error schema same with fastapi when validation error (or vice versa)
         if is_email_exist and is_username_exist:
@@ -62,9 +66,7 @@ def signup(session: sessionDep, response : Response, data : Signup, bgt : Backgr
 
         password_byte = data.password.encode("utf-8")
         salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(password_byte, salt)
-
-        print("password has been hashed")
+        hashed_password = bcrypt.hashpw(password_byte, salt).decode()
 
         new_user : Users = Users(
             name = data.name,
@@ -78,11 +80,8 @@ def signup(session: sessionDep, response : Response, data : Signup, bgt : Backgr
         session.add(new_user)
         session.commit()
 
-        print("new user added to database")
-
         # TODO implement resending email verification
         bgt.add_task(send_email_verification, data.email)
-        print("background has been created")
 
         return {"message": ["User created successfully. Please verify your email for login."]}
     except Exception as e:

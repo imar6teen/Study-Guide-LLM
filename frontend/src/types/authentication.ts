@@ -23,6 +23,19 @@ export interface LoginData {
   password: string;
 }
 
+type LoginField = "username" | "password";
+
+export interface LoginMessage {
+  message: string[];
+  field?: LoginField[];
+}
+
+export interface LoginReturn {
+  status: number;
+  statusMessage: string;
+  message: LoginMessage;
+}
+
 export interface Error {
   message: string;
   status: string;

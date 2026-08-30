@@ -11,12 +11,15 @@ import useAuthStore from "../hooks/useAuthStore";
 import useGetMe from "../hooks/useGetMe";
 import { useState, useEffect } from "react";
 import ROUTES from "../constants/routes";
+import signin from "../helpers/signin";
 
 function Signin() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<string | null>(null);
+  const [status, setStatus] = useState<number | null>(null);
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isVerified = searchParams.has("verified");
@@ -36,6 +39,7 @@ function Signin() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    setError,
   } = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -44,11 +48,27 @@ function Signin() {
     },
   });
 
-  const onSubmit: SubmitHandler<z.infer<typeof loginSchema>> = (
+  const onSubmit: SubmitHandler<z.infer<typeof loginSchema>> = async (
     data: z.infer<typeof loginSchema>
   ) => {
-    console.log(data);
-    navigate("/app/chat");
+    const result = await signin(data);
+    setStatus(result.status);
+
+    if (result.status !== 200 && "field" in result.message) {
+      const fields = result.message.field;
+      const messages = result.message.message;
+
+      fields.forEach((field, index) => {
+        setError(field, {
+          type: "manual",
+          message: messages?.[index] ?? "Invalid value",
+        });
+      });
+    } else if (result.status === 200) {
+      navigate(ROUTES.CHAT);
+    } else {
+      setMessage(result.message.message[0]);
+    }
   };
 
   if (loading) {
@@ -101,7 +121,7 @@ function Signin() {
             </p>
           </div>
 
-          {isVerified && (
+          {isVerified === true && message === null && (
             <div className="flex items-start gap-sm p-md rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 shadow-lg shadow-emerald-950/20 backdrop-blur-sm transition-all duration-300 animate-in fade-in slide-in-from-top-2">
               <div className="p-xs rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0 flex items-center justify-center">
                 <Icon name="check_circle" size="24px" filled />
@@ -113,6 +133,22 @@ function Signin() {
                 <p className="font-body-sm text-body-sm text-emerald-200/90 leading-relaxed">
                   Your email has been verified successfully. You can now sign
                   in.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {status !== null && status !== 200 && message && (
+            <div className="flex items-start gap-sm p-md rounded-xl bg-error-container/30 border border-error/30 text-on-error-container shadow-lg shadow-black/20 backdrop-blur-sm transition-all duration-300 animate-in fade-in slide-in-from-top-2">
+              <div className="p-xs rounded-lg bg-error/20 text-error shrink-0 flex items-center justify-center">
+                <Icon name="error" size="24px" filled />
+              </div>
+              <div className="flex-1 space-y-xs">
+                <h4 className="font-label-md text-label-md text-error font-semibold tracking-wide uppercase">
+                  Registration Failed
+                </h4>
+                <p className="font-body-sm text-body-sm text-on-error-container/90 leading-relaxed">
+                  Please check the field you have entered.
                 </p>
               </div>
             </div>
