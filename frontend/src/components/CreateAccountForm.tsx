@@ -40,6 +40,7 @@ function CreateAccountForm({
         type="text"
         register={register}
         errors={errors}
+        isSubmitting={isSubmitting}
       />
 
       <InputForm<z.infer<typeof signupSchema>>
@@ -51,6 +52,7 @@ function CreateAccountForm({
         type="text"
         register={register}
         errors={errors}
+        isSubmitting={isSubmitting}
       />
 
       <InputForm<z.infer<typeof signupSchema>>
@@ -62,6 +64,7 @@ function CreateAccountForm({
         type="email"
         register={register}
         errors={errors}
+        isSubmitting={isSubmitting}
       />
 
       <InputForm<z.infer<typeof signupSchema>>
@@ -73,6 +76,7 @@ function CreateAccountForm({
         type="password"
         register={register}
         errors={errors}
+        isSubmitting={isSubmitting}
       />
 
       <button

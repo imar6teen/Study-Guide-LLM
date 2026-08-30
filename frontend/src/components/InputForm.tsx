@@ -19,6 +19,7 @@ type InputFormProps<T extends FieldValues> = {
   type: "text" | "password" | "email";
   register: UseFormRegister<T>;
   errors: FieldErrors<T>;
+  isSubmitting: boolean;
 };
 
 function InputForm<T extends FieldValues>({
@@ -30,6 +31,7 @@ function InputForm<T extends FieldValues>({
   type,
   register,
   errors,
+  isSubmitting,
 }: InputFormProps<T>) {
   const error = get(errors, registerName);
 
@@ -56,6 +58,7 @@ function InputForm<T extends FieldValues>({
           type={
             type === "password" ? (showPassword ? "text" : "password") : type
           }
+          disabled={isSubmitting}
         />
         {type === "password" && (
           <button

@@ -40,6 +40,7 @@ function SignInForm({
         type="text"
         register={register}
         errors={errors}
+        isSubmitting={isSubmitting}
       />
 
       <div className="flex flex-col space-y-xs">
@@ -52,6 +53,7 @@ function SignInForm({
           type="password"
           register={register}
           errors={errors}
+          isSubmitting={isSubmitting}
         />
         <div className="flex justify-end pr-xs">
           <a
