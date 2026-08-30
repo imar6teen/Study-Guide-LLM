@@ -1,5 +1,5 @@
 from study_guide_llm.app.db import verify_user
-from fastapi import APIRouter, Query, Form, Depends, Request, Response
+from fastapi import APIRouter, Query, Form, Depends, Request, Response, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 from enum import Enum
@@ -10,7 +10,7 @@ import bcrypt
 from study_guide_llm.app.db import get_session, is_user_exist, delete_user
 from study_guide_llm.models import Users
 from study_guide_llm.app.types.auth import Signup, Login
-from study_guide_llm.configs import DEFAULT_IMAGE, PASSWORD_SALT, FRONTEND_URI
+from study_guide_llm.configs import DEFAULT_IMAGE, FRONTEND_URI
 from study_guide_llm.utils import verification_token, send_email_verification
 
 
@@ -41,11 +41,13 @@ def login(session: sessionDep, data : Login, response : Response):
     return {"message": "Login successful"}
 
 @router.post("/signup")
-def signup(session: sessionDep, response : Response, data : Signup):
+def signup(session: sessionDep, response : Response, data : Signup, bgt : BackgroundTasks):
     try:
         is_email_exist = is_user_exist(session, "email", data.email)
         is_username_exist = is_user_exist(session, "username", data.username)
+        print("checking existing done")
         
+        # TODO make the error schema same with fastapi when validation error (or vice versa)
         if is_email_exist and is_username_exist:
             response.status_code = 400
             return {
@@ -59,7 +61,10 @@ def signup(session: sessionDep, response : Response, data : Signup):
             return {"message": ["Username already exists"], "field": ["username"]}
 
         password_byte = data.password.encode("utf-8")
-        hashed_password = bcrypt.hashpw(password_byte, PASSWORD_SALT)
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password_byte, salt)
+
+        print("password has been hashed")
 
         new_user : Users = Users(
             name = data.name,
@@ -73,9 +78,12 @@ def signup(session: sessionDep, response : Response, data : Signup):
         session.add(new_user)
         session.commit()
 
-        # TODO implement background tasks for sending/resending email verification
-        send_email_verification(data.email)
-        
+        print("new user added to database")
+
+        # TODO implement resending email verification
+        bgt.add_task(send_email_verification, data.email)
+        print("background has been created")
+
         return {"message": ["User created successfully. Please verify your email for login."]}
     except Exception as e:
         # TODO make sure deleting user is success, use background task

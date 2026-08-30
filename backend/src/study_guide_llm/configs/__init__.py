@@ -19,5 +19,3 @@ MAIL_SALT = os.getenv("MAIL_SALT")
 
 FRONTEND_URI = os.getenv("FRONTEND_URI")
 BACKEND_URI = os.getenv("BACKEND_URI")
-
-PASSWORD_SALT = os.getenv("PASSWORD_SALT").encode("utf-8")
