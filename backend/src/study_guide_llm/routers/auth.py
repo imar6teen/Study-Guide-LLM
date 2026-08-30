@@ -6,7 +6,7 @@ from typing import Annotated
 from sqlmodel import Session, select
 import bcrypt
 
-from study_guide_llm.app.db import get_session, is_user_exist, delete_user
+from study_guide_llm.app.db import get_session, is_user_exist, delete_user, get_current_user
 from study_guide_llm.models import Users
 from study_guide_llm.app.types.auth import Signup, Login
 from study_guide_llm.configs import DEFAULT_IMAGE, FRONTEND_URI
@@ -92,9 +92,12 @@ def signup(session: sessionDep, response : Response, data : Signup, bgt : Backgr
 
 
 @router.get("/me")
-def me(session: sessionDep, request : Request):
-    # print(request.["user"])
-    return
+def me(response : Response, user : Annotated[Users | None, Depends(get_current_user)]):
+    if user is None:
+        response.status_code = 401
+        return None
+    
+    return user
     
 @router.get("/verify-email")
 def verify_email(session : sessionDep, token : str):

@@ -1,3 +1,4 @@
+from starlette.requests import Request
 from typing import Literal
 from study_guide_llm.models import Users
 from sqlmodel import SQLModel, Session, create_engine, select, text
@@ -59,3 +60,15 @@ def verify_user(session : Session, email : str):
     except Exception as e:
         print(e)
         return False
+
+# depdends function
+def get_current_user(request : Request) -> Users | None:
+    user = request.session.get("user")
+
+    # update session
+    request.session["user"] = user
+
+    if user is not None:
+        return user
+    
+    return None
