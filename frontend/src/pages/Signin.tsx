@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { z } from "zod";
@@ -14,9 +14,12 @@ import ROUTES from "../constants/routes";
 
 function Signin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isVerified = searchParams.has("verified");
 
   useGetMe();
 
@@ -97,6 +100,23 @@ function Signin() {
               Ready to continue your academic journey?
             </p>
           </div>
+
+          {isVerified && (
+            <div className="flex items-start gap-sm p-md rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 shadow-lg shadow-emerald-950/20 backdrop-blur-sm transition-all duration-300 animate-in fade-in slide-in-from-top-2">
+              <div className="p-xs rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0 flex items-center justify-center">
+                <Icon name="check_circle" size="24px" filled />
+              </div>
+              <div className="flex-1 space-y-xs">
+                <h4 className="font-label-md text-label-md text-emerald-300 font-semibold tracking-wide uppercase">
+                  Email Verified
+                </h4>
+                <p className="font-body-sm text-body-sm text-emerald-200/90 leading-relaxed">
+                  Your email has been verified successfully. You can now sign
+                  in.
+                </p>
+              </div>
+            </div>
+          )}
 
           <SignInForm
             register={register}
