@@ -1,3 +1,4 @@
+from study_guide_llm.app.db import verify_user
 from fastapi import APIRouter, Query, Form, Depends, Request, Response
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
@@ -10,7 +11,7 @@ from study_guide_llm.app.db import get_session, is_user_exist, delete_user
 from study_guide_llm.models import Users
 from study_guide_llm.app.types.auth import Signup, Login
 from study_guide_llm.configs import DEFAULT_IMAGE, PASSWORD_SALT, FRONTEND_URI
-from study_guide_llm.utils import verify_email_verification_token, send_email_verification
+from study_guide_llm.utils import verification_token, send_email_verification
 
 
 router = APIRouter(
@@ -72,10 +73,12 @@ def signup(session: sessionDep, response : Response, data : Signup):
         session.add(new_user)
         session.commit()
 
+        # TODO implement background tasks for sending/resending email verification
         send_email_verification(data.email)
         
         return {"message": ["User created successfully. Please verify your email for login."]}
     except Exception as e:
+        # TODO make sure deleting user is success, use background task
         delete_user(session, data.email)
         print(e)
         return {"message" : ["Something went wrong. Please try again later"]}
@@ -86,12 +89,17 @@ def me(session: sessionDep):
     pass
     
 @router.get("/verify-email")
-def verify_email(token : str):
-    email = verify_email_verification_token(token)
+def verify_email(session : sessionDep, token : str):
+    email = verification_token(token)
     
     if not email:
         # TODO create page for invalid token
-        return {"message": "Invalid token"}
+        return {"message": "Invalid token. Please signup"}
 
-    
-    return RedirectResponse(f"{FRONTEND_URI}/app/signin")
+    is_email_verified = verify_user(session, email)
+
+    if not is_email_verified:
+        # TODO create page for user can't be verified
+        return {"message": "User can't be verified"}
+
+    return RedirectResponse(f"{FRONTEND_URI}/app/signin?verified=1")

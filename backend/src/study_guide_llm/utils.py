@@ -48,8 +48,8 @@ def send_email_verification(email : str):
         return False
 
 
-def verify_email_verification_token(token : str):
-    """Verify the email verification token. Return email address if valid"""
+def verification_token(token : str):
+    """Verify token. Return email address if valid"""
     try:
         email = signer.loads(token, max_age = int(MAX_AGE), salt=MAIL_SALT)
         return email
@@ -57,6 +57,3 @@ def verify_email_verification_token(token : str):
         return None
     except BadTimeSignature:
         return None
-
-
-    

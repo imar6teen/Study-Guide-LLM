@@ -47,3 +47,15 @@ def delete_user(session : Session, email : str):
         print(e)
         return False
     
+def verify_user(session : Session, email : str):
+    try:
+        data : Users | None = session.exec(select(Users).where(Users.email == email)).first()
+        if not data:
+            return False
+        data.email_verified = True
+        session.add(data)
+        session.commit()
+        return True
+    except Exception as e:
+        print(e)
+        return False
