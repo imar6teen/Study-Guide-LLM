@@ -4,7 +4,7 @@ from sqlmodel import Session
 from typing import Annotated
 from starlette.middleware.sessions import SessionMiddleware
 
-from study_guide_llm.configs import SECRET_KEY, MAX_AGE
+from study_guide_llm.configs import SECRET_KEY, MAX_AGE, FRONTEND_URI
 from study_guide_llm.app.db import get_session
 from study_guide_llm.routers.auth import router as auth_router
 
@@ -18,7 +18,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, max_age=MAX_AGE)
+app.add_middleware(
+    SessionMiddleware, 
+    secret_key=SECRET_KEY, 
+    max_age=int(MAX_AGE),
+    session_cookie="user_auth",
+    same_site="lax", # default
+    https_only=False, # TODO: change to True when deploying,
+)
 
 app.include_router(auth_router)
 

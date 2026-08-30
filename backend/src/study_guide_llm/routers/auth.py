@@ -1,5 +1,6 @@
 from study_guide_llm.app.db import verify_user
-from fastapi import APIRouter, Query, Form, Depends, Request, Response, BackgroundTasks
+from fastapi import APIRouter, Query, Form, Depends, Response, BackgroundTasks
+from starlette.requests import Request
 from fastapi.responses import RedirectResponse
 from typing import Annotated
 from sqlmodel import Session, select
@@ -23,7 +24,6 @@ sessionDep = Annotated[Session, Depends(get_session)]
 def login(session: sessionDep, data : Login, request : Request, response : Response):
     user : Users | None = session.exec(select(Users).where(Users.username == data.username)).first()
 
-    print(user.password.encode('utf-8'))
     # TODO make the error schema same with fastapi when validation error (or vice versa)
     if not user:
         response.status_code = 404
@@ -92,8 +92,9 @@ def signup(session: sessionDep, response : Response, data : Signup, bgt : Backgr
 
 
 @router.get("/me")
-def me(session: sessionDep):
-    pass
+def me(session: sessionDep, request : Request):
+    # print(request.["user"])
+    return
     
 @router.get("/verify-email")
 def verify_email(session : sessionDep, token : str):

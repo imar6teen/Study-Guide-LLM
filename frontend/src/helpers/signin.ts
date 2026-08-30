@@ -12,6 +12,7 @@ async function signin(data: z.infer<typeof loginSchema>) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(data),
       }
     );
