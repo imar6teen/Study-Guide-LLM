@@ -36,6 +36,7 @@ function Signup() {
     register,
     handleSubmit,
     setError,
+    setValues,
     formState: { errors, isSubmitting },
   } = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
@@ -72,6 +73,12 @@ function Signup() {
       }
     } else {
       setMessage(result.message.message[0]);
+      setValues({
+        email: "",
+        username: "",
+        name: "",
+        password: "",
+      });
     }
   };
 
@@ -152,7 +159,7 @@ function Signup() {
                   Registration Failed
                 </h4>
                 <p className="font-body-sm text-body-sm text-on-error-container/90 leading-relaxed">
-                  {message}
+                  Please check the field you have entered.
                 </p>
               </div>
             </div>
