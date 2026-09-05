@@ -19,3 +19,9 @@ MAIL_SALT = os.getenv("MAIL_SALT")
 
 FRONTEND_URI = os.getenv("FRONTEND_URI")
 BACKEND_URI = os.getenv("BACKEND_URI")
+
+LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY")
+
+FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY")
+
+MODEL_NAME = os.getenv("MODEL_NAME")
