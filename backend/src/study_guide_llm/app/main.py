@@ -4,13 +4,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session
 from typing import Annotated
 from starlette.middleware.sessions import SessionMiddleware
-from typing import Annotated
 from langchain.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 import uuid
 
 from study_guide_llm.configs import SECRET_KEY, MAX_AGE, FRONTEND_URI, DB_URI
-from study_guide_llm.app.db import get_session, get_current_user, create_chat_room, create_chat, get_order
+from study_guide_llm.app.db import (
+    get_session, 
+    get_current_user, 
+    create_chat_room, 
+    create_chat, 
+    get_order, 
+    get_user_chat_rooms, 
+    get_chat_history
+)
 from study_guide_llm.routers.auth import router as auth_router
 from study_guide_llm.models import Users
 from study_guide_llm.agents import agent_builder, GraphState
@@ -87,16 +94,18 @@ def chat(session : sessionDep, data : Chat, response : Response, user : Annotate
             "messages" : [HumanMessage(content=message)]
         }, config=config)
 
+    user_id = user["id"] if isinstance(user, dict) else getattr(user, "users_id", None)
+
     if data.thread is None:
         # create chat_room
-        chat_room = create_chat_room(session, user.users_id, thread, result["topic"])
+        chat_room = create_chat_room(session, user_id, thread, result.get("topic"))
         if chat_room is None:
             response.status_code = 500
             return None
         else:
             print("chat room created ", chat_room)
     
-    order : int = get_order(thread)
+    order : int = get_order(session, thread)
     # create chat
     # TODO: it's dangerous if one success and the other not, it'll cause mismatch in order, handle it by using transaction
     create_chat(session, thread, order, "human", data.message)
@@ -111,9 +120,69 @@ def chat(session : sessionDep, data : Chat, response : Response, user : Annotate
     }
 
 @app.get("/chat")
-def get_room_chat():
-    return {"message": "Hello Chat"}
+def get_room_chat(
+    session : sessionDep, 
+    response : Response, 
+    user : Annotated[Users | None, Depends(get_current_user)]
+):
+    if user is None:
+        response.status_code = 401
+        return {"message": "Unauthorized"}
+
+    user_id = user["id"] if isinstance(user, dict) else getattr(user, "users_id", None)
+    if not user_id:
+        response.status_code = 401
+        return {"message": "Unauthorized"}
+
+    rooms = get_user_chat_rooms(session, user_id)
+    return [
+        {
+            "chatrooms_id": str(r[0]),
+            "thread_id": str(r[0]),
+            "room_name": r[1] if r[1] else "Untitled Chat",
+            "timestamp": r[2],
+            "updated_at": r[2]
+        }
+        for r in rooms
+    ]
 
 @app.get("/load/{thread_id}")
-def load_chat(thread_id : str):
-    return {"message" : "Hello Chat"}
+def load_chat(
+    thread_id : str, 
+    session : sessionDep, 
+    response : Response, 
+    user : Annotated[Users | None, Depends(get_current_user)]
+):
+    if user is None:
+        response.status_code = 401
+        return {"message": "Unauthorized"}
+
+    user_id = user["id"] if isinstance(user, dict) else getattr(user, "users_id", None)
+    if not user_id:
+        response.status_code = 401
+        return {"message": "Unauthorized"}
+
+    chatroom, chats = get_chat_history(session, thread_id, user_id)
+    if not chatroom:
+        response.status_code = 404
+        return {"message": "Chat room not found"}
+
+    return {
+        "chatrooms_id": str(chatroom.chatrooms_id),
+        "thread_id": str(chatroom.chatrooms_id),
+        "room_name": chatroom.room_name,
+        "chats": [
+            {
+                "chats_id": str(c.chats_id),
+                "id": str(c.chats_id),
+                "chatrooms_id": str(c.chatrooms_id),
+                "order": c.order,
+                "type": c.type,
+                "role": "user" if c.type == "human" else "ai",
+                "content": c.content,
+                "created_at": c.created_at,
+                "updated_at": c.updated_at
+            }
+            for c in chats
+        ]
+    }

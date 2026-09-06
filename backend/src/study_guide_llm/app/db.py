@@ -1,7 +1,8 @@
 from starlette.requests import Request
 from typing import Literal
 from study_guide_llm.models import Users, ChatRooms, Chats
-from sqlmodel import SQLModel, Session, create_engine, select, text
+from sqlmodel import SQLModel, Session, create_engine, select, text, func, desc
+import uuid
 
 from study_guide_llm.configs import DB_URI, APP_ENV
 
@@ -61,9 +62,10 @@ def verify_user(session : Session, email : str):
         print(e)
         return False
 
-def create_chat_room(session : Session, user_id : str, thread_id : str, room_name : str) -> ChatRooms | None:
+def create_chat_room(session : Session, user_id : str | uuid.UUID, thread_id : str | uuid.UUID, room_name : str | None) -> ChatRooms | None:
     try:
-        data : ChatRooms = ChatRooms(users_id=user_id, chatrooms_id=thread_id, name=room_name)
+        formatted_name = (room_name[:30] if room_name else "New Chat")
+        data : ChatRooms = ChatRooms(users_id=user_id, chatrooms_id=thread_id, room_name=formatted_name)
         session.add(data)
         session.commit()
         return data
@@ -71,7 +73,7 @@ def create_chat_room(session : Session, user_id : str, thread_id : str, room_nam
         print(e)
         return None
 
-def create_chat(session : Session, thread_id : str, order : int, type : Literal["human", "ai"], content : str) -> Chats:
+def create_chat(session : Session, thread_id : str | uuid.UUID, order : int, type : Literal["human", "ai"], content : str) -> Chats | None:
     try:
         data : Chats = Chats(
             chatrooms_id=thread_id,
@@ -86,13 +88,63 @@ def create_chat(session : Session, thread_id : str, order : int, type : Literal[
         print(e)
         return None
 
-def get_order(session : Session, thread_id : str):
-    data : Chats | None = session.exec(select(Chats).where(Chats.chatrooms_id == thread_id)).order_by(Chats.order.desc()).first()
+def get_order(session : Session, thread_id : str | uuid.UUID):
+    data : Chats | None = session.exec(
+        select(Chats).where(Chats.chatrooms_id == thread_id).order_by(Chats.order.desc())
+    ).first()
 
     if not data:
         return 1
     
     return data.order + 1
+
+def get_user_chat_rooms(session : Session, user_id : str | uuid.UUID):
+    try:
+        latest_timestamp = func.coalesce(func.max(Chats.updated_at), ChatRooms.updated_at).label("latest_updated_at")
+
+        statement = (
+            select(
+                ChatRooms.chatrooms_id,
+                ChatRooms.room_name,
+                latest_timestamp
+            )
+            .outerjoin(Chats, ChatRooms.chatrooms_id == Chats.chatrooms_id)
+            .where(
+                ChatRooms.users_id == user_id,
+                ChatRooms.deleted_at == None
+            )
+            .group_by(ChatRooms.chatrooms_id, ChatRooms.room_name, ChatRooms.updated_at)
+            .order_by(desc(latest_timestamp))
+        )
+
+        return session.exec(statement).all()
+    except Exception as e:
+        print(e)
+        return []
+
+def get_chat_history(session : Session, thread_id : str | uuid.UUID, user_id : str | uuid.UUID):
+    try:
+        chatroom = session.exec(
+            select(ChatRooms).where(
+                ChatRooms.chatrooms_id == thread_id,
+                ChatRooms.users_id == user_id,
+                ChatRooms.deleted_at == None
+            )
+        ).first()
+
+        if not chatroom:
+            return None, []
+
+        chats = session.exec(
+            select(Chats)
+            .where(Chats.chatrooms_id == chatroom.chatrooms_id)
+            .order_by(Chats.order.asc(), Chats.created_at.asc())
+        ).all()
+
+        return chatroom, list(chats)
+    except Exception as e:
+        print(e)
+        return None, []
 
 # depends function
 def get_current_user(request : Request) -> Users | None:
