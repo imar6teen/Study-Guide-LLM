@@ -62,10 +62,10 @@ class Users(SQLModel, table = True):
 
 class ChatRooms(SQLModel, table = True):
     chatrooms_id : uuid.UUID = Field(
-        default_factory = uuid.uuid4,
+        default_factory = uuid.uuid4, # TODO: This should be change, because uuid is need to match with thread id in langgraph
         primary_key = True,
         index = True,
-        nullable = True
+        nullable = False
     )
 
     users_id : uuid.UUID = Field(

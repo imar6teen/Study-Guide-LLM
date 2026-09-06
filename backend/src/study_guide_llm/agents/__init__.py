@@ -11,13 +11,16 @@ from operator import add
 from enum import Enum
 
 from study_guide_llm.configs import MODEL_NAME
-from study_guide_llm.agents.tools import web_scraper, web_search, SearchResult, ScrapeData
+from study_guide_llm.agents.tools import web_scraper, web_search, SearchResult
 from study_guide_llm.agents.instructions import (
     PLANNER_INSTRUCTION, 
     TEACHER_INSTRUCTION, 
     RESPONSE_INSTRUCTION, 
     ROUTER_INSTRUCTION
 )
+
+from study_guide_llm.configs import DB_URI
+from langgraph.checkpoint.postgres import PostgresSaver
 
 tools = [web_scraper, web_search]
 tools_by_name = {tool.name: tool for tool in tools}
@@ -396,4 +399,4 @@ agent_builder.add_conditional_edges("router", conditional_edges, {
 # inside the node functions, so no static edges are needed here.
 agent_builder.add_edge("response", END)
 
-agent = agent_builder.compile()
+

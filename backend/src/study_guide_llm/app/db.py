@@ -1,6 +1,6 @@
 from starlette.requests import Request
 from typing import Literal
-from study_guide_llm.models import Users
+from study_guide_llm.models import Users, ChatRooms, Chats
 from sqlmodel import SQLModel, Session, create_engine, select, text
 
 from study_guide_llm.configs import DB_URI, APP_ENV
@@ -61,7 +61,40 @@ def verify_user(session : Session, email : str):
         print(e)
         return False
 
-# depdends function
+def create_chat_room(session : Session, user_id : str, thread_id : str, room_name : str) -> ChatRooms | None:
+    try:
+        data : ChatRooms = ChatRooms(users_id=user_id, chatrooms_id=thread_id, name=room_name)
+        session.add(data)
+        session.commit()
+        return data
+    except Exception as e:
+        print(e)
+        return None
+
+def create_chat(session : Session, thread_id : str, order : int, type : Literal["human", "ai"], content : str) -> Chats:
+    try:
+        data : Chats = Chats(
+            chatrooms_id=thread_id,
+            order=order,
+            type=type,
+            content=content
+        )
+        session.add(data)
+        session.commit()
+        return data
+    except Exception as e:
+        print(e)
+        return None
+
+def get_order(session : Session, thread_id : str):
+    data : Chats | None = session.exec(select(Chats).where(Chats.chatrooms_id == thread_id)).order_by(Chats.order.desc()).first()
+
+    if not data:
+        return 1
+    
+    return data.order + 1
+
+# depends function
 def get_current_user(request : Request) -> Users | None:
     user = request.session.get("user")
 
