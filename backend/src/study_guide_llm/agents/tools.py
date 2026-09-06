@@ -38,20 +38,23 @@ SCRAPE_CACHE : dict[str, dict] = {
 def web_scraper(url : str) -> str:
     """Web scraper tool."""
 
-    if url in SCRAPE_CACHE and (time.time() - SCRAPE_CACHE[url]["timestamp"]) < 60 * 60 * 24:
-        print(f"CACHE HIT : {url}")
-        return SCRAPE_CACHE[url]["markdown"]
+    try:
+        if url in SCRAPE_CACHE and (time.time() - SCRAPE_CACHE[url]["timestamp"]) < 60 * 60 * 24:
+            print(f"CACHE HIT : {url}")
+            return SCRAPE_CACHE[url]["markdown"]
 
-    print(f"CACHE MISS : {url}")
-    result : ScrapeData = app.scrape(
-        url=url,
-        formats=[
-            "markdown",
-        ]
-    )
-    
-    SCRAPE_CACHE[url] = {
-        "markdown" : result,
-        "timestamp" : time.time()
-    }
-    return result.markdown
+        print(f"CACHE MISS : {url}")
+        result : ScrapeData = app.scrape(
+            url=url,
+            formats=[
+                "markdown",
+            ]
+        )
+        
+        SCRAPE_CACHE[url] = {
+            "markdown" : result,
+            "timestamp" : time.time()
+        }
+        return result.markdown
+    except Exception as e:
+        return "Some error occured while scraping the url. choose another URL instead."

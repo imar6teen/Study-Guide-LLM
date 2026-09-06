@@ -58,7 +58,7 @@ class RouterOutput(BaseModel):
         None,
         description="Topic of the study guide, get it from what user ask",
     )
-    goto : Literal["planner", "teacher", "response"] = Field("response",
+    goto : Literal["planner", "teacher", "response"] = Field(
         description="Next agent to visit. if topic is None then goto is response.",
     )
     user_message : str | None = Field(
@@ -92,7 +92,7 @@ def router_agent(state : GraphState):
         return Command(
             goto=AGENT_NAME.RESPONSE.value,
             update={
-                "messages" : AIMessage(content="The previous message is not from human. Answer to the user there is something wrong.")
+                "messages" : [AIMessage(content="The previous message is not from human. Answer to the user there is something wrong.")]
             }
         )
 
@@ -101,7 +101,7 @@ def router_agent(state : GraphState):
         state["messages"][-1]
     ]
 
-    if state["topic"] is not None:
+    if state.get("topic", None) is not None:
         rev_messages = state.get("messages")[::-1]
         latest_response_agent_message = ""
         for i in rev_messages:
@@ -118,7 +118,7 @@ def router_agent(state : GraphState):
     parsed_response : RouterOutput = response["parsed"]
 
     return {
-        "messages" : AIMessage(content=response["raw"]),
+        "messages" : [response["raw"]],
         "out_of" : AGENT_NAME.ROUTER.value,
         "topic" : parsed_response.topic,
         "goto" : parsed_response.goto,
@@ -135,7 +135,7 @@ def planner_agent(state : GraphState):
     # 6. If the subtopic is complete, move to the next subtopic
     # 7. If the subtopic is not complete, continue the planning process
     # 8. When subtopic is complete, add the planner message to the state
-    topic = state.get["topic"]
+    topic = state.get("topic", None)
 
     tool_llm = llm.bind_tools(tools)
     structure_llm = llm.with_structured_output(PlannerOutput, include_raw=True, method="json_schema")
@@ -153,20 +153,20 @@ def planner_agent(state : GraphState):
     if state.get("current_batch_messages") is None:
 
         result = tool_llm.invoke([
-            AIMessage(content=PLANNER_INSTRUCTION),
-            f"""
+            SystemMessage(content=PLANNER_INSTRUCTION),
+            AIMessage(content=f"""
                 {addition_message}
 
                 User wants to make study guide for : {topic}
                 Currently there is no reference.
-            """
+            """)
         ])
 
         if result.tool_calls:
             return Command(
                 goto="tool_node",
                 update={
-                    "messages" : result,
+                    "messages" : [result],
                     "current_batch_messages" : [
                         result
                     ],
@@ -177,14 +177,14 @@ def planner_agent(state : GraphState):
     elif state["active_iteration"] < 5:
         cbm = state.get("current_batch_messages")
         result = tool_llm.invoke([
-            AIMessage(content=PLANNER_INSTRUCTION),   
+            SystemMessage(content=PLANNER_INSTRUCTION),   
         ] + cbm)
         
         if result.tool_calls:
             return Command(
                 goto="tool_node",
                 update={
-                    "messages" : result,
+                    "messages" : [result],
                     "current_batch_messages" : state["current_batch_messages"] + [
                         result
                     ],
@@ -196,21 +196,23 @@ def planner_agent(state : GraphState):
     
     cbm = state.get("current_batch_messages")
     result = structure_llm.invoke([
-        AIMessage(content=PLANNER_INSTRUCTION),   
+        SystemMessage(content=PLANNER_INSTRUCTION),   
     ] + cbm)
 
     parsed_result : PlannerOutput = result["parsed"]
 
-    return {
-        "messages" : AIMessage(content=result["raw"]),
-        "out_of" : AGENT_NAME.PLANNER.value,
-        # "topic" : state["topic"],
-        "subtopic" : parsed_result.subtopic,
-        "references" : parsed_result.references,
-        "goto" : "teacher",
-        "current_batch_messages" : None,
-        "active_iteration" : 0,
-    }
+    return Command(
+        goto="teacher",
+        update={
+            "messages" : [result["raw"]],
+            "out_of" : AGENT_NAME.PLANNER.value,
+            "subtopic" : parsed_result.subtopic,
+            "references" : parsed_result.references,
+            "goto" : "teacher",
+            "current_batch_messages" : [],
+            "active_iteration" : 0,
+        }
+    )
 
 def teacher_agent(state : GraphState):
     if state["out_of"] == "router":
@@ -244,7 +246,7 @@ def teacher_agent(state : GraphState):
     references = state["references"]
     web_scrape_result = state.get("web_scrape_result", {})
     tool_llm = llm.bind_tools([web_scraper])
-    structure_llm = llm.with_structured_output(TeacherOutput)   
+    structure_llm = llm.with_structured_output(TeacherOutput, include_raw=True, method="json_schema")   
     addition_message = f"""
     You are given with these references :
     {references}
@@ -255,11 +257,12 @@ def teacher_agent(state : GraphState):
     Here are the subtopic you need to create content for :
     {subtopics}
 
-    If you need more reference to create the content, use web search tool. 
+    If you need more reference to create the content, use web scrape tool. 
     """
-    if state.get("current_batch_messages") is None:
+    if len(state.get("current_batch_messages", [])) == 0:
         result = tool_llm.invoke([
-            AIMessage(content=TEACHER_INSTRUCTION + "\n" + addition_message),
+            SystemMessage(content=TEACHER_INSTRUCTION),
+            AIMessage(content=addition_message),
         ])
         if result.tool_calls:
             return Command(
@@ -273,11 +276,11 @@ def teacher_agent(state : GraphState):
                     "active_iteration" : 0,
                 }
             )
-    elif state["active_iteration"] < 5:
+    elif state.get("active_iteration", 0) < 5:
         cbm = state.get("current_batch_messages")
         result = tool_llm.invoke([
-            AIMessage(content=TEACHER_INSTRUCTION + "\n" + addition_message),
-        ] + cbm)
+            SystemMessage(content=TEACHER_INSTRUCTION),
+        ] + cbm + [AIMessage(content=addition_message)])
         
         if result.tool_calls:
             return Command(
@@ -292,25 +295,31 @@ def teacher_agent(state : GraphState):
                 }
             )
         
-    cbm = state.get("current_batch_messages")
+    cbm = state.get("current_batch_messages", [])
     result = structure_llm.invoke([
-        AIMessage(content=TEACHER_INSTRUCTION + "\n" + addition_message),
-    ] + cbm)
+        SystemMessage(content=TEACHER_INSTRUCTION),
+    ] + cbm + [AIMessage(content=addition_message)])
 
     parsed_result : TeacherOutput = result["parsed"]
     
-    return {
-        "messages" : AIMessage(content=result["raw"]),
-        "out_of" : AGENT_NAME.TEACHER.value,
-        "subtopic" : parsed_result.subtopic,
-        "detail_subtopic" : parsed_result.detail_subtopic,
-        "references" : parsed_result.references,
-        "current_batch_messages" : None,
-        "active_iteration" : 0,
-    }
+    return Command(
+        goto="response",
+        update={
+            "messages" : [result["raw"]],
+            "out_of" : AGENT_NAME.TEACHER.value,
+            "detail_subtopic" : parsed_result.detail_subtopic,
+            "references" : parsed_result.references,
+            "current_batch_messages" : [],
+            "active_iteration" : 0,
+        }
+    )
 
 def response_agent(state : GraphState):
-    topic, subtopics, detail_subtopics, references, user_message = state["topic"], state["subtopic"], state["detail_subtopic"], state["references"], state["user_message"]
+    topic = state.get("topic", None)
+    subtopics = state.get("subtopic", None)
+    detail_subtopics = state.get("detail_subtopic", None)
+    references = state.get("references", None)
+    user_message = state.get("user_message", None)
     out_of = state.get("out_of", None)
     ai_msg = None
 
@@ -322,19 +331,20 @@ def response_agent(state : GraphState):
         Subtopics : {subtopics}
         Detail Subtopics : {detail_subtopics}
         Referencess : {references}
-        User Message : {user_message}
         From : {out_of}
         """)
     
     messages = [
+        SystemMessage(content=RESPONSE_INSTRUCTION),
         ai_msg,
-        RESPONSE_INSTRUCTION
+        HumanMessage(content=user_message)
     ]
     
     result = llm.invoke(messages)
+    result.additional_kwargs["agent"] = AGENT_NAME.RESPONSE.value
 
     return {
-        "messages" : [AIMessage(content=result.content, additional_kwargs={"agent" : AGENT_NAME.RESPONSE.value})],
+        "messages" : [result],
         "out_of" : AGENT_NAME.RESPONSE.value,
     }
 
@@ -366,6 +376,9 @@ def tool_node(state : GraphState):
         }
     )
 
+def conditional_edges(state : GraphState):
+    return state["goto"]
+
 agent_builder = StateGraph(GraphState)
 agent_builder.add_node("tool_node", tool_node)
 agent_builder.add_node("router", router_agent)
@@ -374,13 +387,13 @@ agent_builder.add_node("teacher", teacher_agent)
 agent_builder.add_node("response", response_agent)
 
 agent_builder.add_edge(START, "router")
-agent_builder.add_conditional_edges("router", lambda s : s["goto"], {
-    "planner" : "planner",
-    "teacher" : "teacher",
+agent_builder.add_conditional_edges("router", conditional_edges, {
     "response" : "response",
+    "planner" : "planner",
+    "teacher" : "teacher"
 })
-agent_builder.add_edge("planner", "teacher")
-agent_builder.add_edge("teacher", "response")
+# Routing for planner→teacher and teacher→response is handled by Command objects
+# inside the node functions, so no static edges are needed here.
 agent_builder.add_edge("response", END)
 
 agent = agent_builder.compile()

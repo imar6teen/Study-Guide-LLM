@@ -7,6 +7,14 @@ from starlette.middleware.sessions import SessionMiddleware
 from study_guide_llm.configs import SECRET_KEY, MAX_AGE, FRONTEND_URI
 from study_guide_llm.app.db import get_session
 from study_guide_llm.routers.auth import router as auth_router
+from study_guide_llm.agents import agent
+from langchain.messages import HumanMessage
+
+result = agent.invoke({
+    "messages" : [HumanMessage(content="Can you please create a study guide about trading?")]
+})
+
+print(result)
 
 app = FastAPI()
 
