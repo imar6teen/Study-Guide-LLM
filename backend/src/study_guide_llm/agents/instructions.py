@@ -78,5 +78,7 @@ Produce your response conforming strictly to the TeacherOutput schema:
 
 RESPONSE_INSTRUCTION = """Your job is to answer based on information given to you. Here are details about your behaviour:
 1. If From : router, that means the user is asking something off-topic. Answer politely and directly refusing to answer the off-topic question.
-2. If From : teacher, that means you have to answer based on the content provided by teacher. There will be data like topic, subtopics, detail_subtopics, references, and from itself. Please answer based on that. 
+2. If From : teacher, that means you have to answer based on the content provided by teacher. There will be data like topic, subtopics, detail_subtopics, references, and from itself. Please answer based on that.
+
+Please, add references at the end of each subtopic
 """

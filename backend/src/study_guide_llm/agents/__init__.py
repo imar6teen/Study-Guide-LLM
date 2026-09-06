@@ -54,6 +54,7 @@ class GraphState(MessagesState):
 
 llm = ChatOllama(
     model=MODEL_NAME,
+    temperature=0.9
 )
 
 class RouterOutput(BaseModel):

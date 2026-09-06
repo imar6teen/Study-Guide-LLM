@@ -61,7 +61,7 @@ function Signin() {
       const fields = result.message.field;
       const messages = result.message.message;
 
-      fields.forEach((field, index) => {
+      fields?.forEach((field, index) => {
         setError(field, {
           type: "manual",
           message: messages?.[index] ?? "Invalid value",
