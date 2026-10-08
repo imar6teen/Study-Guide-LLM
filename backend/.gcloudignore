@@ -1,0 +1,13 @@
+# Files not uploaded to App Engine
+.gcloudignore
+.git
+.gitignore
+.venv/
+__pycache__/
+*.py[oc]
+.env
+.env.*
+env.example.yaml
+uv.lock
+.python-version
+README.md

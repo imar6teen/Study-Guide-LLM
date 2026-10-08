@@ -7,6 +7,9 @@ import { useNavigate } from "react-router";
 import ROUTES from "../constants/routes";
 import { fetchChatRooms, loadChat, sendChatMessage } from "../helpers/chat";
 import type { ChatRoom } from "../types/chat";
+import useLLMStore from "../hooks/useLLMStore";
+import LLMSettingsDialog from "../components/LLMSettingsDialog";
+import { LLMError } from "../errors";
 
 interface Message {
   id: string | number;
@@ -199,6 +202,9 @@ function Chat() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isLoaded = useAuthStore((state) => state.isLoaded);
 
+  const llmSettings = useLLMStore((state) => state.settings);
+  const openLLMDialog = useLLMStore((state) => state.openDialog);
+
   useGetMe();
 
   useEffect(() => {
@@ -210,6 +216,13 @@ function Chat() {
       refreshChatRooms();
     }
   }, [isAuthenticated, navigate, isLoaded]);
+
+  // First access: ask for provider, model & API key (BYOK)
+  useEffect(() => {
+    if (isLoaded && isAuthenticated && !llmSettings) {
+      openLLMDialog();
+    }
+  }, [isLoaded, isAuthenticated, llmSettings, openLLMDialog]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
@@ -286,6 +299,11 @@ function Chat() {
     const trimmed = text.trim();
     if (!trimmed || typing) return;
 
+    if (!llmSettings) {
+      openLLMDialog("Connect an AI provider before starting a study guide.");
+      return;
+    }
+
     const userMsgId = `user-${Date.now()}`;
     setMessages((m) => [
       ...m,
@@ -315,13 +333,24 @@ function Chat() {
       refreshChatRooms();
     } catch (err) {
       console.error("Error sending message:", err);
+
+      let content =
+        "An error occurred while connecting to the Academic Engine. Please try again.";
+      if (err instanceof LLMError) {
+        content = `**${err.message}**`;
+        if (err.needsSettings) {
+          openLLMDialog(`${err.message} Please check your provider, model and API key.`);
+        } else if (err.code === "llm_rate_limited") {
+          content += "\n\nYour provider's quota or rate limit was reached. Wait a moment or switch model.";
+        }
+      }
+
       setMessages((m) => [
         ...m,
         {
           id: `err-${Date.now()}`,
           role: "ai",
-          content:
-            "An error occurred while connecting to the Academic Engine. Please try again.",
+          content,
         },
       ]);
     } finally {
@@ -353,6 +382,7 @@ function Chat() {
 
   return (
     <div className="bg-surface font-body-md text-on-surface">
+      <LLMSettingsDialog />
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 lg:hidden"
@@ -446,13 +476,20 @@ function Chat() {
 
           <div className="pt-sm mt-auto border-t border-on-primary/10">
             <button
+              id="sidebar-settings-button"
               className="flex items-center w-full px-md py-sm rounded-xl text-on-background hover:bg-on-primary/30 transition-all"
               onClick={() => {
                 setSidebarOpen(false);
+                openLLMDialog();
               }}
             >
               <Icon name="settings" className="mr-sm" />
-              Settings
+              <span className="flex-1 text-left">Settings</span>
+              {llmSettings && (
+                <span className="text-[10px] text-outline truncate max-w-[110px]">
+                  {llmSettings.model}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -474,6 +511,22 @@ function Chat() {
             </span>
           </div>
           <div className="flex items-center gap-2 md:gap-md shrink-0">
+            <button
+              id="header-model-button"
+              type="button"
+              onClick={() => openLLMDialog()}
+              title="Change AI provider / model"
+              className={`flex items-center gap-xs rounded-full border px-2.5 py-1 text-[12px] font-medium transition-colors ${
+                llmSettings
+                  ? "border-outline-variant/50 text-on-surface-variant hover:border-primary/60 hover:text-primary"
+                  : "border-tertiary/50 text-tertiary hover:bg-tertiary-container/20"
+              }`}
+            >
+              <Icon name={llmSettings ? "memory" : "key_off"} size="16px" />
+              <span className="hidden sm:inline truncate max-w-[180px]">
+                {llmSettings ? llmSettings.model : "Connect AI"}
+              </span>
+            </button>
             <button className="flex items-center gap-xs text-secondary hover:text-on-secondary-container transition-colors">
               <Icon name="auto_awesome" />
               <span className="font-label-md hidden md:inline">

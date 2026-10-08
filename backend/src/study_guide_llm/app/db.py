@@ -5,6 +5,7 @@ from sqlmodel import SQLModel, Session, create_engine, select, text, func, desc
 import uuid
 
 from study_guide_llm.configs import DB_URI, APP_ENV
+from study_guide_llm.utils import verify_auth_token
 
 engine = create_engine(DB_URI)
 
@@ -147,13 +148,28 @@ def get_chat_history(session : Session, thread_id : str | uuid.UUID, user_id : s
         return None, []
 
 # depends function
-def get_current_user(request : Request) -> Users | None:
+def get_current_user(request : Request) -> dict | Users | None:
+    # 1. First check session cookie (Starlette SessionMiddleware)
     user = request.session.get("user")
-
-    # update session
-    request.session["user"] = user
-
     if user is not None:
+        request.session["user"] = user
         return user
-    
+
+    # 2. Check Authorization header: Bearer <token> or X-Session-Token
+    auth_header = request.headers.get("Authorization") or request.headers.get("authorization")
+    token = None
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+    elif request.headers.get("X-Session-Token"):
+        token = request.headers.get("X-Session-Token").strip()
+
+    if token:
+        user_data = verify_auth_token(token)
+        if user_data:
+            try:
+                request.session["user"] = user_data
+            except Exception:
+                pass
+            return user_data
+
     return None

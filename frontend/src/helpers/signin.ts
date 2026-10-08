@@ -3,6 +3,8 @@ import { loginSchema } from "../types";
 import { ServerError, UnauthorizedError } from "../errors";
 import type { LoginReturn } from "../types/authentication";
 
+import { setAuthToken } from "./auth";
+
 async function signin(data: z.infer<typeof loginSchema>) {
   try {
     const response = await fetch(
@@ -17,6 +19,10 @@ async function signin(data: z.infer<typeof loginSchema>) {
       }
     );
     const msg = await response.json();
+
+    if (response.ok && msg?.token) {
+      setAuthToken(msg.token);
+    }
 
     const result: LoginReturn = {
       status: response.status,

@@ -10,7 +10,7 @@ from study_guide_llm.app.db import get_session, is_user_exist, delete_user, get_
 from study_guide_llm.models import Users
 from study_guide_llm.app.types.auth import Signup, Login
 from study_guide_llm.configs import DEFAULT_IMAGE, FRONTEND_URI
-from study_guide_llm.utils import verification_token, send_email_verification
+from study_guide_llm.utils import verification_token, send_email_verification, generate_auth_token
 
 
 router = APIRouter(
@@ -36,14 +36,25 @@ def login(session: sessionDep, data : Login, request : Request, response : Respo
         response.status_code = 401
         return {"message": ["Invalid password"], "field": ["password"]}
 
-    request.session["user"] = {
+    user_data = {
         "id" : str(user.users_id),
         "username" : user.username,
         "email" : user.email,
         "name" : user.name
     }
-    
-    return {"message": ["Login successful"]}
+    request.session["user"] = user_data
+    token = generate_auth_token(user_data)
+
+    return {
+        "message": ["Login successful"],
+        "user": user_data,
+        "token": token
+    }
+
+@router.post("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return {"message": "Logged out successfully"}
 
 @router.post("/signup")
 def signup(session: sessionDep, response : Response, data : Signup, bgt : BackgroundTasks):

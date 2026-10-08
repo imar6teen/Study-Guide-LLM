@@ -1,4 +1,6 @@
-import { ServerError, UnauthorizedError } from "../errors";
+import { LLMError, ServerError, UnauthorizedError, parseLLMError } from "../errors";
+import { llmHeaders } from "./llm";
+import { authHeaders } from "./auth";
 import type {
   ChatRoom,
   LoadChatResponse,
@@ -9,6 +11,9 @@ export async function fetchChatRooms(): Promise<ChatRoom[]> {
   try {
     const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/chat`, {
       method: "GET",
+      headers: {
+        ...authHeaders(),
+      },
       credentials: "include",
     });
 
@@ -37,6 +42,9 @@ export async function loadChat(threadId: string): Promise<LoadChatResponse> {
       `${import.meta.env.VITE_BACKEND_URL}/load/${threadId}`,
       {
         method: "GET",
+        headers: {
+          ...authHeaders(),
+        },
         credentials: "include",
       }
     );
@@ -69,6 +77,8 @@ export async function sendChatMessage(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders(),
+        ...llmHeaders(), // BYOK: provider / key / model
       },
       credentials: "include",
       body: JSON.stringify({
@@ -76,6 +86,10 @@ export async function sendChatMessage(
         thread: threadId || null,
       }),
     });
+
+    // Provider / key problems come back with a `detail.code` starting with "llm_"
+    const llmError = await parseLLMError(res);
+    if (llmError) throw llmError;
 
     if (res.status === 401) {
       throw new UnauthorizedError("User Unauthorized!", res.status);
@@ -89,7 +103,11 @@ export async function sendChatMessage(
 
     return await res.json();
   } catch (err) {
-    if (err instanceof UnauthorizedError || err instanceof ServerError) {
+    if (
+      err instanceof UnauthorizedError ||
+      err instanceof ServerError ||
+      err instanceof LLMError
+    ) {
       throw err;
     }
     throw new Error("Failed to send message", { cause: err });

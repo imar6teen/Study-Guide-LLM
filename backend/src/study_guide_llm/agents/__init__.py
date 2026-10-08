@@ -3,14 +3,14 @@ from pydantic import BaseModel, Field
 from langchain.messages import AnyMessage
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage, ToolMessage
 # from langchain_core.prompts import PromptTemplate
-from langchain_ollama import ChatOllama
 from langgraph.graph import MessagesState, StateGraph, START, END
+from langgraph.runtime import Runtime
 from langgraph.types import Command
 from typing_extensions import Annotated
 from operator import add
 from enum import Enum
 
-from study_guide_llm.configs import MODEL_NAME
+from study_guide_llm.llm import LLMContext
 from study_guide_llm.agents.tools import web_scraper, web_search, SearchResult
 from study_guide_llm.agents.instructions import (
     PLANNER_INSTRUCTION, 
@@ -18,9 +18,6 @@ from study_guide_llm.agents.instructions import (
     RESPONSE_INSTRUCTION, 
     ROUTER_INSTRUCTION
 )
-
-from study_guide_llm.configs import DB_URI
-from langgraph.checkpoint.postgres import PostgresSaver
 
 tools = [web_scraper, web_search]
 tools_by_name = {tool.name: tool for tool in tools}
@@ -52,10 +49,12 @@ class GraphState(MessagesState):
     user_message : str
 
 
-llm = ChatOllama(
-    model=MODEL_NAME,
-    temperature=0.9
-)
+# The chat model is no longer a module-level global: each request brings its own
+# provider + API key (BYOK), injected through the LangGraph runtime context.
+def structured(runtime : Runtime[LLMContext], schema : type[BaseModel]):
+    return runtime.context.llm.with_structured_output(
+        schema, include_raw=True, method=runtime.context.structured_method
+    )
 
 class RouterOutput(BaseModel):
     topic : str | None = Field(
@@ -88,8 +87,8 @@ class TeacherOutput(BaseModel):
     )
 
 
-def router_agent(state : GraphState):
-    structured_response = llm.with_structured_output(RouterOutput, include_raw=True, method="json_schema")
+def router_agent(state : GraphState, runtime : Runtime[LLMContext]):
+    structured_response = structured(runtime, RouterOutput)
 
     if type(state["messages"][-1]) is not HumanMessage:
         #* Skipping to response agent since the previous message is not from human
@@ -110,12 +109,19 @@ def router_agent(state : GraphState):
         latest_response_agent_message = ""
         for i in rev_messages:
             if isinstance(i, AIMessage) and i.additional_kwargs.get("agent") == AGENT_NAME.RESPONSE.value:
-                latest_response_agent_message = i.content
+                latest_response_agent_message = i.text
                 break
+        # Single user turn so every provider accepts it (some reject consecutive
+        # same-role messages or conversations that don't start with the user).
         messages = [
             SystemMessage(ROUTER_INSTRUCTION),
-            latest_response_agent_message,
-            state["messages"][-1]
+            HumanMessage(content=f"""
+                Previous assistant response:
+                {latest_response_agent_message}
+
+                User message:
+                {state["messages"][-1].content}
+            """)
         ]
 
     response = structured_response.invoke(messages)
@@ -130,7 +136,7 @@ def router_agent(state : GraphState):
         "user_message" : state["messages"][-1].content,
     }
 
-def planner_agent(state : GraphState):
+def planner_agent(state : GraphState, runtime : Runtime[LLMContext]):
     # 1. Get the topic from router
     # 2. Check if there is previous reference
     # 3. If reference is present, check if it is enough, if not then search more using web search tool
@@ -141,8 +147,8 @@ def planner_agent(state : GraphState):
     # 8. When subtopic is complete, add the planner message to the state
     topic = state.get("topic", None)
 
-    tool_llm = llm.bind_tools(tools)
-    structure_llm = llm.with_structured_output(PlannerOutput, include_raw=True, method="json_schema")
+    tool_llm = runtime.context.llm.bind_tools(tools)
+    structure_llm = structured(runtime, PlannerOutput)
 
     revision = state.get("revision", "")
     addition_message = """"""
@@ -154,16 +160,21 @@ def planner_agent(state : GraphState):
             {revision["messages"]}
         """
 
-    if state.get("current_batch_messages") is None:
+    # The task prompt is kept as the first (user) message of the batch so that
+    # follow-up tool-calling turns always start with a user turn, which
+    # Anthropic / Gemini require.
+    task_message = HumanMessage(content=f"""
+        {addition_message}
+
+        User wants to make study guide for : {topic}
+        Currently there is no reference.
+    """)
+
+    if not state.get("current_batch_messages"):
 
         result = tool_llm.invoke([
             SystemMessage(content=PLANNER_INSTRUCTION),
-            AIMessage(content=f"""
-                {addition_message}
-
-                User wants to make study guide for : {topic}
-                Currently there is no reference.
-            """)
+            task_message
         ])
 
         if result.tool_calls:
@@ -172,6 +183,7 @@ def planner_agent(state : GraphState):
                 update={
                     "messages" : [result],
                     "current_batch_messages" : [
+                        task_message,
                         result
                     ],
                     "active_agent" : AGENT_NAME.PLANNER.value,
@@ -198,7 +210,7 @@ def planner_agent(state : GraphState):
                 }
             )
     
-    cbm = state.get("current_batch_messages")
+    cbm = state.get("current_batch_messages") or [task_message]
     result = structure_llm.invoke([
         SystemMessage(content=PLANNER_INSTRUCTION),   
     ] + cbm)
@@ -218,13 +230,15 @@ def planner_agent(state : GraphState):
         }
     )
 
-def teacher_agent(state : GraphState):
+def teacher_agent(state : GraphState, runtime : Runtime[LLMContext]):
+    llm = runtime.context.llm
+
     if state["out_of"] == "router":
         rev_messages = state.get("messages")[::-1]
         latest_response_agent_message = ""
         for i in rev_messages:
             if isinstance(i, AIMessage) and i.additional_kwargs.get("agent") == AGENT_NAME.RESPONSE.value:
-                latest_response_agent_message = i.content
+                latest_response_agent_message = i.text
                 break
         addition_message = f"""
             User asking about {state.get("user_message")}
@@ -236,7 +250,7 @@ def teacher_agent(state : GraphState):
         """
 
         result = llm.invoke([
-            AIMessage(content=addition_message)
+            HumanMessage(content=addition_message)
         ])
 
         return Command(
@@ -250,7 +264,7 @@ def teacher_agent(state : GraphState):
     references = state["references"]
     web_scrape_result = state.get("web_scrape_result", {})
     tool_llm = llm.bind_tools([web_scraper])
-    structure_llm = llm.with_structured_output(TeacherOutput, include_raw=True, method="json_schema")   
+    structure_llm = structured(runtime, TeacherOutput)
     addition_message = f"""
     You are given with these references :
     {references}
@@ -266,7 +280,7 @@ def teacher_agent(state : GraphState):
     if len(state.get("current_batch_messages", [])) == 0:
         result = tool_llm.invoke([
             SystemMessage(content=TEACHER_INSTRUCTION),
-            AIMessage(content=addition_message),
+            HumanMessage(content=addition_message),
         ])
         if result.tool_calls:
             return Command(
@@ -284,7 +298,8 @@ def teacher_agent(state : GraphState):
         cbm = state.get("current_batch_messages")
         result = tool_llm.invoke([
             SystemMessage(content=TEACHER_INSTRUCTION),
-        ] + cbm + [AIMessage(content=addition_message)])
+            HumanMessage(content=addition_message),
+        ] + cbm)
         
         if result.tool_calls:
             return Command(
@@ -302,7 +317,8 @@ def teacher_agent(state : GraphState):
     cbm = state.get("current_batch_messages", [])
     result = structure_llm.invoke([
         SystemMessage(content=TEACHER_INSTRUCTION),
-    ] + cbm + [AIMessage(content=addition_message)])
+        HumanMessage(content=addition_message),
+    ] + cbm)
 
     parsed_result : TeacherOutput = result["parsed"]
     
@@ -318,33 +334,39 @@ def teacher_agent(state : GraphState):
         }
     )
 
-def response_agent(state : GraphState):
+def response_agent(state : GraphState, runtime : Runtime[LLMContext]):
     topic = state.get("topic", None)
     subtopics = state.get("subtopic", None)
     detail_subtopics = state.get("detail_subtopic", None)
     references = state.get("references", None)
     user_message = state.get("user_message", None)
     out_of = state.get("out_of", None)
-    ai_msg = None
+    context = None
 
     if out_of == "router":
-        ai_msg = AIMessage(content=f"From : {out_of}")
+        context = f"From : {out_of}"
     else:
-        ai_msg = AIMessage(content=f"""
+        context = f"""
         Topic : {topic}
         Subtopics : {subtopics}
         Detail Subtopics : {detail_subtopics}
         Referencess : {references}
         From : {out_of}
-        """)
+        """
     
+    # Context + user message in one user turn (portable across providers).
     messages = [
         SystemMessage(content=RESPONSE_INSTRUCTION),
-        ai_msg,
-        HumanMessage(content=user_message)
+        HumanMessage(content=f"""
+        Context from previous agents:
+        {context}
+
+        User message:
+        {user_message}
+        """)
     ]
     
-    result = llm.invoke(messages)
+    result = runtime.context.llm.invoke(messages)
     result.additional_kwargs["agent"] = AGENT_NAME.RESPONSE.value
 
     return {
@@ -362,7 +384,8 @@ def tool_node(state : GraphState):
     for tool_call in last_message.tool_calls:
         tool = tools_by_name[tool_call["name"]]
         observation = tool.invoke(tool_call["args"])
-        results.append(ToolMessage(content=observation, tool_call_id=tool_call["id"]))
+        content = observation if isinstance(observation, str) else str(observation)
+        results.append(ToolMessage(content=content, tool_call_id=tool_call["id"]))
 
         if tool_call["name"] == "web_scrape":
             scrape[tool_call["args"]["url"]] = observation
@@ -383,7 +406,7 @@ def tool_node(state : GraphState):
 def conditional_edges(state : GraphState):
     return state["goto"]
 
-agent_builder = StateGraph(GraphState)
+agent_builder = StateGraph(GraphState, context_schema=LLMContext)
 agent_builder.add_node("tool_node", tool_node)
 agent_builder.add_node("router", router_agent)
 agent_builder.add_node("planner", planner_agent)

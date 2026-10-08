@@ -9,3 +9,6 @@ wheels/
 # Virtual environments
 .venv
 .env
+
+# App Engine deploy secrets
+env.yaml

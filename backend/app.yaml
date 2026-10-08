@@ -1,0 +1,24 @@
+# Google App Engine (Standard) configuration for the FastAPI backend.
+# Deploy from the backend/ directory:  gcloud app deploy
+runtime: python312
+
+# `--app-dir src` makes the src-layout package importable without installing it.
+entrypoint: uvicorn study_guide_llm.app.main:app --host 0.0.0.0 --port $PORT --app-dir src --proxy-headers --forwarded-allow-ips="*"
+
+# Agent runs (search + scrape + several LLM calls) are memory / CPU heavy.
+instance_class: F2
+
+automatic_scaling:
+  min_instances: 0
+  max_instances: 3
+  target_cpu_utilization: 0.75
+
+# Secrets & environment-specific values live in env.yaml (git-ignored).
+# Copy env.example.yaml -> env.yaml and fill it in before deploying.
+includes:
+  - env.yaml
+
+handlers:
+  - url: /.*
+    script: auto
+    secure: always

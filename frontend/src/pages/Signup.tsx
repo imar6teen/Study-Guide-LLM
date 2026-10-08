@@ -118,7 +118,7 @@ function Signup() {
 
       {/* Right form panel */}
       <main className="flex-1 flex items-center justify-center px-margin-mobile md:px-md py-lg">
-        <div className="w-full max-w-full flex flex-col space-y-lg">
+        <div className="w-full max-w-[440px] mx-auto flex flex-col space-y-lg">
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-sm">
             <div className="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center mb-base shadow-sm lg:hidden">
               <Icon

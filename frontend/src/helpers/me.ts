@@ -1,4 +1,5 @@
 import { UnauthorizedError, ServerError } from "../errors";
+import { authHeaders } from "./auth";
 
 interface Me {
   name: string;
@@ -9,6 +10,9 @@ interface Me {
 async function getMe(): Promise<Me> {
   const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
     method: "GET",
+    headers: {
+      ...authHeaders(),
+    },
     credentials: "include",
   });
   const data: Me = await res.json();
